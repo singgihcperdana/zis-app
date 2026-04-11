@@ -6,7 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Config;
 use App\Services\MigrationService;
-use RuntimeException;
+use Throwable;
 
 final class InternalController
 {
@@ -24,7 +24,7 @@ final class InternalController
 
         try {
             $result = (new MigrationService())->migrate();
-        } catch (RuntimeException $exception) {
+        } catch (Throwable $exception) {
             $this->json([
                 'success' => false,
                 'message' => $exception->getMessage(),

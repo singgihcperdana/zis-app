@@ -37,8 +37,6 @@ final class MigrationService
                 throw new RuntimeException('File migration kosong atau tidak bisa dibaca: ' . $filename);
             }
 
-            $connection->beginTransaction();
-
             try {
                 $connection->exec($sql);
 
@@ -47,11 +45,8 @@ final class MigrationService
                 );
                 $statement->execute(['filename' => $filename]);
 
-                $connection->commit();
                 $executed[] = $filename;
             } catch (\Throwable $exception) {
-                $connection->rollBack();
-
                 throw new RuntimeException(
                     'Migration gagal pada file ' . $filename . ': ' . $exception->getMessage(),
                     (int) $exception->getCode(),
