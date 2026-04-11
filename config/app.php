@@ -10,4 +10,7 @@ return [
     'debug' => Env::get('APP_DEBUG', 'false'),
     'url' => Env::get('APP_URL', 'http://localhost'),
     'timezone' => Env::get('APP_TIMEZONE', 'Asia/Jakarta'),
+    'migration' => [
+        'token' => Env::get('MIGRATION_TOKEN', ''),
+    ],
 ];

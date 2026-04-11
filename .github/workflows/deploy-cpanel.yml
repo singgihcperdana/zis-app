@@ -36,3 +36,9 @@ jobs:
             **/.github/**
             **/node_modules/**
             .env
+
+      - name: Trigger database migrations
+        run: |
+          curl --fail --show-error --silent \
+            -X POST "${{ secrets.MIGRATION_URL }}" \
+            -H "X-Migration-Token: ${{ secrets.MIGRATION_TOKEN }}"

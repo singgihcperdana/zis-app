@@ -52,11 +52,23 @@ final class Router
 
         if (is_array($handler)) {
             [$class, $action] = $handler;
-            $controller = new $class($authService);
+            $controller = $this->makeController($class, $authService);
             $controller->{$action}();
             return;
         }
 
         $handler();
+    }
+
+    private function makeController(string $class, AuthService $authService): object
+    {
+        $reflection = new \ReflectionClass($class);
+        $constructor = $reflection->getConstructor();
+
+        if ($constructor === null || $constructor->getNumberOfParameters() === 0) {
+            return new $class();
+        }
+
+        return new $class($authService);
     }
 }

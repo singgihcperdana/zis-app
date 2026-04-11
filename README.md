@@ -12,6 +12,7 @@ ZIS App sekarang memakai struktur PHP native yang ringan dan cocok untuk shared 
 - `app/Views/` template halaman
 - `app/Core/routes.php` definisi route web
 - `config/` konfigurasi app dan MySQL
+- `database/migrations/` file migration SQL
 
 ## Fitur Awal
 
@@ -38,16 +39,59 @@ DB_DATABASE=zis_app
 DB_USERNAME=root
 DB_PASSWORD=
 DB_CHARSET=utf8mb4
+MIGRATION_TOKEN=change-this-to-a-long-random-secret
 ```
 
-Aplikasi akan mencari user dari tabel MySQL berikut:
+Aplikasi akan mencari user dari tabel MySQL `users`.
+
+Migration SQL sudah tersedia di:
+
+- [001_create_users_table.sql](/Users/singgihperdana/data/source_code/projects/php/zis-app/database/migrations/001_create_users_table.sql:1)
+- [002_seed_admin_user.sql](/Users/singgihperdana/data/source_code/projects/php/zis-app/database/migrations/002_seed_admin_user.sql:1)
+
+Kalau mau eksekusi manual, pakai urutan ini:
+
+```bash
+mysql -u root -p zis_app < database/migrations/001_create_users_table.sql
+mysql -u root -p zis_app < database/migrations/002_seed_admin_user.sql
+```
+
+Atau jalankan migration otomatis lewat endpoint internal:
+
+```bash
+curl -X POST http://127.0.0.1:8000/internal/migrate \
+  -H "X-Migration-Token: change-this-to-a-long-random-secret"
+```
+
+Endpoint ini akan:
+
+- membuat tabel `schema_migrations` jika belum ada
+- menjalankan file SQL yang belum pernah dieksekusi
+- mencatat nama file migration yang sudah sukses
+
+Response sukses contoh:
+
+```json
+{
+  "success": true,
+  "executed": [
+    "001_create_users_table.sql",
+    "002_seed_admin_user.sql"
+  ],
+  "skipped": []
+}
+```
+
+Isi tabel yang dipakai app:
 
 ```sql
 CREATE TABLE users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
 
@@ -59,7 +103,7 @@ Cara cepat membuat hash password:
 php tools/hash-password.php "password-kamu"
 ```
 
-Contoh insert user:
+Seed admin bawaan:
 
 ```sql
 INSERT INTO users (name, email, password)
