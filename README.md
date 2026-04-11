@@ -4,7 +4,7 @@ ZIS App sekarang memakai struktur PHP native yang ringan dan cocok untuk shared 
 
 ## Struktur
 
-- `public/` entry point aplikasi
+- root project sebagai web entry point (`index.php` dan `.htaccess`)
 - `app/Core/` komponen dasar seperti bootstrap, router, session, response, config, dan koneksi database
 - `app/Controllers/` controller request
 - `app/Services/` service aplikasi
@@ -75,7 +75,7 @@ VALUES (
 Kalau mau menjalankan lokal dengan built-in server PHP:
 
 ```bash
-php -S 127.0.0.1:8000 -t public
+php -S 127.0.0.1:8000
 ```
 
 Lalu buka `http://127.0.0.1:8000/login`.
