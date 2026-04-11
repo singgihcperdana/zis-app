@@ -25,13 +25,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: npm
 
       - name: Install PHP dependencies
         run: composer install --no-dev --optimize-autoloader
 
       - name: Install JavaScript dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build frontend assets
         run: npm run build
@@ -52,7 +51,10 @@ jobs:
           local-dir: ./
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
           exclude: |
-            **/.git*
+            .git/**
+            **/.git/**
+            **/.gitignore
+            **/.gitattributes
             **/.github/**
             **/node_modules/**
             **/tests/**
