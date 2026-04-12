@@ -6,6 +6,7 @@ use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\InstitutionProfileController;
 use App\Controllers\InternalController;
+use App\Controllers\PublicDashboardController;
 use App\Controllers\ReportController;
 use App\Controllers\UserManagementController;
 use App\Controllers\ZakatPaymentController;
@@ -20,6 +21,8 @@ return static function (Router $router): void {
         Response::redirect($auth->check() ? '/dashboard' : '/login');
     });
 
+    $router->get('/public/dashboard', [PublicDashboardController::class, 'page']);
+    $router->get('/api/public/dashboard/summary', [PublicDashboardController::class, 'summaryApi']);
     $router->get('/login', [AuthController::class, 'showLogin'], ['guest' => true]);
     $router->post('/login', [AuthController::class, 'login'], ['guest' => true]);
     $router->get('/dashboard', [DashboardController::class, 'index'], ['auth' => true]);

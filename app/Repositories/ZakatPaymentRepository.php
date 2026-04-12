@@ -612,6 +612,54 @@ final class ZakatPaymentRepository
         return $this->maxReceiptSequenceForYear(Database::connection(), $year);
     }
 
+    public function minPaymentAt(): ?string
+    {
+        try {
+            $statement = Database::connection()->query(
+                'SELECT MIN(payment_at) FROM zakat_payment WHERE canceled = 0'
+            );
+            $value = $statement->fetchColumn();
+
+            return $value !== false && $value !== null ? (string) $value : null;
+        } catch (PDOException $exception) {
+            throw new RuntimeException(
+                'Gagal membaca tanggal pembayaran paling awal.',
+                (int) $exception->getCode(),
+                $exception
+            );
+        }
+    }
+
+    public function fitrahJiwaBreakdown(string $fromInclusive, string $toExclusive): array
+    {
+        try {
+            $statement = Database::connection()->prepare(
+                "SELECT
+                    q.zakat_type,
+                    COALESCE(SUM(COALESCE(p.jumlah_jiwa, 0)), 0) AS total_jiwa
+                 FROM zakat_payment p
+                 INNER JOIN zakat_quality q ON q.id = p.zakat_quality_id
+                 WHERE p.payment_at >= :from_inclusive
+                   AND p.payment_at < :to_exclusive
+                   AND p.canceled = 0
+                   AND q.zakat_type IN ('ZAKAT_FITRAH_BERAS', 'ZAKAT_FITRAH_UANG')
+                 GROUP BY q.zakat_type"
+            );
+            $statement->execute([
+                'from_inclusive' => $fromInclusive,
+                'to_exclusive' => $toExclusive,
+            ]);
+
+            return $statement->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $exception) {
+            throw new RuntimeException(
+                'Gagal menghitung breakdown jiwa fitrah.',
+                (int) $exception->getCode(),
+                $exception
+            );
+        }
+    }
+
     public function lastIssuedReceiptSequence(int $year): int
     {
         try {
