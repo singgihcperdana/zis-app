@@ -9,6 +9,7 @@ declare(strict_types=1);
     <title><?= e($title ?? 'Dashboard Publik ZIS'); ?></title>
     <link href="/assets/adminlte/plugins/fontawesome-free/css/all.min.css" rel="stylesheet">
     <script src="/assets/adminlte/plugins/jquery/jquery.min.js"></script>
+    <script src="/assets/adminlte/plugins/chart.js/Chart.min.js"></script>
     <style>
         :root {
             --bg: #f4f0e8;
@@ -322,34 +323,8 @@ declare(strict_types=1);
             height: 228px;
         }
 
-        .chart-canvas-wrap canvas {
-            display: none;
-        }
-
         .money-type-chart-wrap {
             height: 248px;
-        }
-
-        .chart-svg {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .chart-svg-slice {
-            stroke: #ffffff;
-            stroke-width: 3;
-        }
-
-        .chart-svg-label {
-            fill: #ffffff;
-            font: 700 12px "Trebuchet MS", sans-serif;
-            text-anchor: middle;
-            dominant-baseline: middle;
-            paint-order: stroke;
-            stroke: rgba(31, 41, 51, 0.18);
-            stroke-width: 3px;
-            stroke-linejoin: round;
         }
 
         .chart-meta {
@@ -811,30 +786,10 @@ declare(strict_types=1);
             if (!chartState) {
                 return;
             }
-            if (chartState.svg && chartState.svg.parentNode) {
-                chartState.svg.parentNode.removeChild(chartState.svg);
+            if (chartState.chart && typeof chartState.chart.destroy === "function") {
+                chartState.chart.destroy();
             }
             delete chartInstances[key];
-        }
-
-        function polarToCartesian(centerX, centerY, radius, angle) {
-            return {
-                x: centerX + Math.cos(angle) * radius,
-                y: centerY + Math.sin(angle) * radius
-            };
-        }
-
-        function createPieSlicePath(centerX, centerY, radius, startAngle, endAngle) {
-            const start = polarToCartesian(centerX, centerY, radius, startAngle);
-            const end = polarToCartesian(centerX, centerY, radius, endAngle);
-            const largeArcFlag = endAngle - startAngle > Math.PI ? 1 : 0;
-
-            return [
-                `M ${centerX} ${centerY}`,
-                `L ${start.x} ${start.y}`,
-                `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`,
-                "Z"
-            ].join(" ");
         }
 
         function renderPieChart(key, canvasId, labels, values, colors, tooltipValueFormatter, showLegend) {
@@ -844,97 +799,97 @@ declare(strict_types=1);
             const total = values.reduce((sum, value) => sum + Number(value || 0), 0);
             const parent = canvas.parentElement;
             parent.querySelectorAll(".chart-empty").forEach(el => el.remove());
-            canvas.style.display = "none";
             if (total <= 0) {
+                canvas.style.display = "none";
                 const empty = document.createElement("div");
                 empty.className = "chart-empty";
                 empty.textContent = "Belum ada data pada periode ini.";
                 parent.appendChild(empty);
                 return;
             }
-
-            const svgNamespace = "http://www.w3.org/2000/svg";
-            const svg = document.createElementNS(svgNamespace, "svg");
-            svg.setAttribute("viewBox", "0 0 240 240");
-            svg.setAttribute("class", "chart-svg");
-            svg.setAttribute("role", "img");
-            svg.setAttribute("aria-label", labels.join(", "));
-
-            const centerX = 120;
-            const centerY = 120;
-            const radius = 92;
+            canvas.style.display = "block";
             const roundedPercentages = computeRoundedPercentages(values);
-            const positiveSlices = values
-                .map((rawValue, index) => ({
-                    index,
-                    value: Number(rawValue || 0),
-                    label: labels[index] || "-"
-                }))
-                .filter(item => item.value > 0);
-
-            if (positiveSlices.length === 1) {
-                const onlySlice = positiveSlices[0];
-                const circle = document.createElementNS(svgNamespace, "circle");
-                circle.setAttribute("cx", String(centerX));
-                circle.setAttribute("cy", String(centerY));
-                circle.setAttribute("r", String(radius));
-                circle.setAttribute("fill", colors[onlySlice.index % colors.length]);
-                circle.setAttribute("class", "chart-svg-slice");
-                const title = document.createElementNS(svgNamespace, "title");
-                const formattedValue = typeof tooltipValueFormatter === "function"
-                    ? tooltipValueFormatter(onlySlice.value)
-                    : new Intl.NumberFormat("id-ID").format(onlySlice.value);
-                title.textContent = `${onlySlice.label}: ${formattedValue} (100%)`;
-                circle.appendChild(title);
-                svg.appendChild(circle);
-
-                const text = document.createElementNS(svgNamespace, "text");
-                text.setAttribute("x", String(centerX));
-                text.setAttribute("y", String(centerY));
-                text.setAttribute("class", "chart-svg-label");
-                text.textContent = "100%";
-                svg.appendChild(text);
-            } else {
-                let currentAngle = -Math.PI / 2;
-                values.forEach((rawValue, index) => {
-                    const value = Number(rawValue || 0);
-                    if (value <= 0) {
-                        return;
+            const chart = new window.Chart(canvas.getContext("2d"), {
+                type: "pie",
+                data: {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        roundedPercentages: roundedPercentages,
+                        backgroundColor: colors,
+                        borderColor: "#ffffff",
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    legend: {
+                        display: showLegend === true
+                    },
+                    tooltips: {
+                        callbacks: {
+                            label: function (tooltipItem, data) {
+                                const dataset = data.datasets[tooltipItem.datasetIndex] || {data: [], roundedPercentages: []};
+                                const value = Number(dataset.data[tooltipItem.index] || 0);
+                                const formattedValue = typeof tooltipValueFormatter === "function"
+                                    ? tooltipValueFormatter(value)
+                                    : new Intl.NumberFormat("id-ID").format(value);
+                                const label = data.labels[tooltipItem.index] || "-";
+                                return `${label}: ${formattedValue} (${Number(dataset.roundedPercentages[tooltipItem.index] || 0)}%)`;
+                            }
+                        }
                     }
+                },
+                plugins: [{
+                    afterDatasetsDraw: function (chartInstance) {
+                        const dataset = chartInstance.data.datasets[0];
+                        if (!dataset || !Array.isArray(dataset.data)) return;
+                        const chartTotal = dataset.data.reduce((sum, value) => sum + Number(value || 0), 0);
+                        if (chartTotal <= 0) return;
 
-                    const sliceAngle = (value / total) * Math.PI * 2;
-                    const endAngle = currentAngle + sliceAngle;
-                    const path = document.createElementNS(svgNamespace, "path");
-                    path.setAttribute("d", createPieSlicePath(centerX, centerY, radius, currentAngle, endAngle));
-                    path.setAttribute("fill", colors[index % colors.length]);
-                    path.setAttribute("class", "chart-svg-slice");
+                        const ctx = chartInstance.ctx;
+                        const meta = chartInstance.getDatasetMeta(0);
+                        ctx.save();
+                        ctx.font = '700 12px "Trebuchet MS", sans-serif';
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
 
-                    const title = document.createElementNS(svgNamespace, "title");
-                    const formattedValue = typeof tooltipValueFormatter === "function"
-                        ? tooltipValueFormatter(value)
-                        : new Intl.NumberFormat("id-ID").format(value);
-                    title.textContent = `${labels[index] || "-"}: ${formattedValue} (${Number(roundedPercentages[index] || 0)}%)`;
-                    path.appendChild(title);
-                    svg.appendChild(path);
+                        meta.data.forEach(function (arc, index) {
+                            const value = Number(dataset.data[index] || 0);
+                            if (value <= 0) return;
+                            const percentageLabel = `${Number(dataset.roundedPercentages[index] || 0)}%`;
+                            if (percentageLabel === "0%") return;
 
-                    const percentageLabel = `${Number(roundedPercentages[index] || 0)}%`;
-                    if (percentageLabel !== "0%") {
-                        const labelAngle = currentAngle + (sliceAngle / 2);
-                        const labelPoint = polarToCartesian(centerX, centerY, radius * 0.62, labelAngle);
-                        const text = document.createElementNS(svgNamespace, "text");
-                        text.setAttribute("x", String(labelPoint.x));
-                        text.setAttribute("y", String(labelPoint.y));
-                        text.setAttribute("class", "chart-svg-label");
-                        text.textContent = percentageLabel;
-                        svg.appendChild(text);
+                            const model = arc._model || arc;
+                            const startAngle = model.startAngle;
+                            const endAngle = model.endAngle;
+                            const innerRadius = model.innerRadius || 0;
+                            const outerRadius = model.outerRadius || 0;
+                            const centerX = model.x;
+                            const centerY = model.y;
+                            if ([startAngle, endAngle, centerX, centerY].some(function (v) { return typeof v !== "number"; })) {
+                                return;
+                            }
+
+                            const angle = (startAngle + endAngle) / 2;
+                            const radius = innerRadius + ((outerRadius - innerRadius) * 0.62);
+                            const x = centerX + Math.cos(angle) * radius;
+                            const y = centerY + Math.sin(angle) * radius;
+
+                            ctx.fillStyle = "#ffffff";
+                            ctx.strokeStyle = "rgba(31, 41, 51, 0.18)";
+                            ctx.lineWidth = 3;
+                            ctx.strokeText(percentageLabel, x, y);
+                            ctx.fillText(percentageLabel, x, y);
+                        });
+
+                        ctx.restore();
                     }
+                }]
+            });
 
-                    currentAngle = endAngle;
-                });
-            }
-
-            parent.appendChild(svg);
-            chartInstances[key] = {svg};
+            chartInstances[key] = {chart: chart};
         }
 
         function openFilterModal() {
