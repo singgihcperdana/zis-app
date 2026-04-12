@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Password;
 use App\Repositories\UserRepository;
 use RuntimeException;
 
@@ -58,7 +59,7 @@ final class UserManagementService
             'id' => $this->uuid(),
             'username' => $username,
             'email' => $email,
-            'password' => password_hash($password, PASSWORD_DEFAULT),
+            'password' => Password::hash($password),
             'role' => $role,
             'active' => 1,
         ]);
@@ -97,7 +98,7 @@ final class UserManagementService
         ];
 
         if (trim($password) !== '') {
-            $data['password'] = password_hash($password, PASSWORD_DEFAULT);
+            $data['password'] = Password::hash($password);
         }
 
         if (($existing['role'] ?? '') === 'ADMIN') {

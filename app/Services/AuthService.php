@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Password;
 use App\Core\Session;
 use App\Repositories\UserRepository;
 use RuntimeException;
@@ -25,7 +26,7 @@ final class AuthService
             throw $exception;
         }
 
-        if (!is_array($user) || !password_verify($password, (string) $user['password'])) {
+        if (!is_array($user) || !Password::verify($password, (string) $user['password'])) {
             return false;
         }
 
