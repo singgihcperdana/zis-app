@@ -24,14 +24,15 @@ final class AuthController
         View::render('auth/login', [
             'title' => 'Login',
             'error' => Session::pullFlash('error'),
-            'oldEmail' => Session::pullFlash('old_email', ''),
+            'success' => Session::pullFlash('success'),
+            'oldLogin' => Session::pullFlash('old_login', ''),
             'csrfToken' => Session::csrfToken(),
         ]);
     }
 
     public function login(): void
     {
-        $email = trim((string) ($_POST['email'] ?? ''));
+        $identity = trim((string) ($_POST['username'] ?? ''));
         $password = (string) ($_POST['password'] ?? '');
         $csrfToken = $_POST['_csrf'] ?? null;
 
@@ -40,23 +41,23 @@ final class AuthController
             Response::redirect('/login');
         }
 
-        if ($email === '' || $password === '') {
-            Session::flash('error', 'Email dan password wajib diisi.');
-            Session::flash('old_email', $email);
+        if ($identity === '' || $password === '') {
+            Session::flash('error', 'Username atau email dan password wajib diisi.');
+            Session::flash('old_login', $identity);
             Response::redirect('/login');
         }
 
         try {
-            $authenticated = $this->auth->attempt($email, $password);
+            $authenticated = $this->auth->attempt($identity, $password);
         } catch (RuntimeException $exception) {
             Session::flash('error', $exception->getMessage());
-            Session::flash('old_email', $email);
+            Session::flash('old_login', $identity);
             Response::redirect('/login');
         }
 
         if (!$authenticated) {
             Session::flash('error', 'Login gagal. Periksa kredensial Anda.');
-            Session::flash('old_email', $email);
+            Session::flash('old_login', $identity);
             Response::redirect('/login');
         }
 
@@ -72,7 +73,7 @@ final class AuthController
         }
 
         $this->auth->logout();
-        Session::flash('error', 'Anda sudah logout.');
+        Session::flash('success', 'Anda berhasil keluar dari aplikasi.');
 
         Response::redirect('/login');
     }

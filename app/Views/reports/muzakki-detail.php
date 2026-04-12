@@ -1,0 +1,430 @@
+<?php
+
+declare(strict_types=1);
+
+ob_start();
+?>
+<style>
+    .report-filter-actions {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        height: 100%;
+        padding-bottom: 1rem;
+    }
+
+    .report-filter-actions .btn {
+        margin-right: 0 !important;
+    }
+
+    @media (max-width: 767.98px) {
+        .report-filter-actions {
+            padding-bottom: 0;
+        }
+    }
+
+    @media print {
+        html, body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 11pt;
+            line-height: 1.3;
+            color: #000;
+        }
+        .no-print { display: none !important; }
+        .content-wrapper { background: #fff !important; }
+        .card { box-shadow: none !important; border: none !important; }
+        .card-body { padding: 0 !important; }
+    }
+</style>
+
+<div>
+    <div class="content-header no-print">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0 text-dark">Data Muzakki</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="/">Home</a></li>
+                        <li class="breadcrumb-item active">Data Muzakki</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="card no-print">
+                <div class="card-header">
+                    <h3 class="card-title">Filter</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="filterFrom">Dari</label>
+                                <input class="form-control" id="filterFrom" type="date">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="filterTo">Sampai</label>
+                                <input class="form-control" id="filterTo" type="date">
+                            </div>
+                        </div>
+                        <div class="col-md-6 mt-3 mt-md-0">
+                            <div class="report-filter-actions">
+                                <button class="btn btn-primary" id="btnApply" type="button">Tampilkan</button>
+                                <button class="btn btn-default" id="btnReset" type="button">Reset</button>
+                                <button class="btn btn-info" id="btnExport" type="button">
+                                    <i class="fas fa-file-csv"></i> Export CSV
+                                </button>
+                                <button class="btn btn-success" id="btnPrint" type="button">
+                                    <i class="fas fa-print"></i> Print
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div id="instansiHeader" class="d-none report-letterhead">
+                        <div class="letterhead-brand">
+                            <div class="letterhead-text">
+                                <div class="instansi-name" id="instansiNama">-</div>
+                                <div class="instansi-address" id="instansiAlamat">-</div>
+                                <div class="instansi-contact" id="instansiKontak">-</div>
+                            </div>
+                            <div class="line-double"></div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mb-3 report-section-title">
+                        <h4 class="mb-0 report-title">
+                            <span class="report-title-underline">LAPORAN DATA MUZAKKI LENGKAP</span>
+                        </h4>
+                        <div class="text-muted report-meta" id="periodeLabel">Periode: -</div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                            <tr>
+                                <th style="width: 50px">No</th>
+                                <th style="width: 140px">
+                                    Tanggal
+                                    <button class="btn btn-xs btn-link p-0 ml-1 sort-btn" data-key="tanggal" type="button" title="Urutkan">
+                                        <i class="fas fa-sort"></i>
+                                    </button>
+                                </th>
+                                <th>
+                                    Nama Muzakki
+                                    <button class="btn btn-xs btn-link p-0 ml-1 sort-btn" data-key="namaMuzakki" type="button" title="Urutkan">
+                                        <i class="fas fa-sort"></i>
+                                    </button>
+                                </th>
+                                <th style="width: 150px">Jenis</th>
+                                <th style="width: 180px" class="text-right">
+                                    Nominal (Rp)
+                                    <button class="btn btn-xs btn-link p-0 ml-1 sort-btn" data-key="nominalRp" type="button" title="Urutkan">
+                                        <i class="fas fa-sort"></i>
+                                    </button>
+                                </th>
+                                <th style="width: 160px" class="text-right">
+                                    Beras (Kg)
+                                    <button class="btn btn-xs btn-link p-0 ml-1 sort-btn" data-key="berasKg" type="button" title="Urutkan">
+                                        <i class="fas fa-sort"></i>
+                                    </button>
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody id="rows">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">Memuat...</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3 report-summary">
+                        <div><strong>Total Nominal:</strong> <span id="sumNominal">-</span></div>
+                        <div><strong>Total Beras:</strong> <span id="sumBeras">-</span></div>
+                        <div><strong>Total Jiwa:</strong> <span id="sumJiwa">-</span></div>
+                    </div>
+
+                    <hr>
+
+                    <div id="ttdBox" class="d-none">
+                        <div class="row">
+                            <div class="col-md-12 text-right">
+                                <div class="mb-4" id="tanggalTtd">-</div>
+                                <div class="row">
+                                    <div class="col-6 text-center">
+                                        <div>Mengetahui,</div>
+                                        <div>Ketua Panitia</div>
+                                        <div class="signature-spacer"></div>
+                                        <div class="signature-name"><strong id="namaKetua">-</strong></div>
+                                    </div>
+                                    <div class="col-6 text-center">
+                                        <div>&nbsp;</div>
+                                        <div>Bendahara</div>
+                                        <div class="signature-spacer"></div>
+                                        <div class="signature-name"><strong id="namaBendahara">-</strong></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    window.addEventListener('load', function () {
+        (function () {
+            const $from = $("#filterFrom");
+            const $to = $("#filterTo");
+            const $btnApply = $("#btnApply");
+            const $btnReset = $("#btnReset");
+            const $btnExport = $("#btnExport");
+            const $btnPrint = $("#btnPrint");
+
+            const $periodeLabel = $("#periodeLabel");
+            const $rows = $("#rows");
+            const $sumNominal = $("#sumNominal");
+            const $sumBeras = $("#sumBeras");
+            const $sumJiwa = $("#sumJiwa");
+
+            const $instansiHeader = $("#instansiHeader");
+            const $ttdBox = $("#ttdBox");
+            const $instansiNama = $("#instansiNama");
+            const $instansiAlamat = $("#instansiAlamat");
+            const $instansiKontak = $("#instansiKontak");
+            const $tanggalTtd = $("#tanggalTtd");
+            const $namaKetua = $("#namaKetua");
+            const $namaBendahara = $("#namaBendahara");
+
+            const sortState = { key: "tanggal", dir: "asc" };
+            let currentRows = [];
+
+            function toLocalIsoDate(d = new Date()) {
+                const x = new Date(d);
+                const y = x.getFullYear();
+                const m = String(x.getMonth() + 1).padStart(2, "0");
+                const day = String(x.getDate()).padStart(2, "0");
+                return `${y}-${m}-${day}`;
+            }
+
+            function todayIso() {
+                return toLocalIsoDate(new Date());
+            }
+
+            function formatIsoDateDisplay(iso) {
+                if (!iso) return "-";
+                const parts = String(iso).split("-");
+                if (parts.length !== 3) return iso;
+                const [yyyy, mm, dd] = parts;
+                return `${dd}/${mm}/${yyyy}`;
+            }
+
+            function rupiah(v) {
+                const n = Number(v ?? 0);
+                return `Rp ${new Intl.NumberFormat("id-ID").format(n)}`;
+            }
+
+            function kg(v) {
+                const n = Number(v ?? 0);
+                return `${new Intl.NumberFormat("id-ID").format(n)} Kg`;
+            }
+
+            function formatKontak(prof) {
+                const telp = (prof?.nomorTelepon || "").trim();
+                const email = (prof?.email || "").trim();
+                if (!telp && !email) return "-";
+                if (telp && email) return `Telp: ${telp}, Email: ${email}`;
+                if (telp) return `Telp: ${telp}`;
+                return `Email: ${email}`;
+            }
+
+            function escapeHtml(str) {
+                return String(str ?? "")
+                    .replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")
+                    .replaceAll("\"", "&quot;")
+                    .replaceAll("'", "&#039;");
+            }
+
+            function setSort(key, dir) {
+                sortState.key = key;
+                sortState.dir = dir;
+                $(".sort-btn").removeClass("text-primary").each(function () {
+                    $(this).find("i").attr("class", "fas fa-sort");
+                });
+
+                const $btn = $(`.sort-btn[data-key="${key}"]`);
+                $btn.addClass("text-primary");
+                const iconClass = (() => {
+                    if (key === "tanggal") return dir === "asc" ? "fas fa-sort-amount-up-alt" : "fas fa-sort-amount-down";
+                    if (key === "namaMuzakki") return dir === "asc" ? "fas fa-sort-alpha-down" : "fas fa-sort-alpha-up";
+                    return dir === "asc" ? "fas fa-sort-numeric-down" : "fas fa-sort-numeric-up";
+                })();
+                $btn.find("i").attr("class", iconClass);
+                renderRows();
+            }
+
+            function compareNullable(a, b, cmp) {
+                const aNull = a === null || a === undefined;
+                const bNull = b === null || b === undefined;
+                if (aNull && bNull) return 0;
+                if (aNull) return 1;
+                if (bNull) return -1;
+                return cmp(a, b);
+            }
+
+            function renderRows() {
+                const list = Array.isArray(currentRows) ? [...currentRows] : [];
+                const dirMul = sortState.dir === "desc" ? -1 : 1;
+                const key = sortState.key;
+
+                list.sort((ra, rb) => {
+                    if (key === "tanggal") {
+                        return compareNullable(ra.tanggal, rb.tanggal, (a, b) => String(a).localeCompare(String(b))) * dirMul;
+                    }
+                    if (key === "namaMuzakki") {
+                        const a = (ra.namaMuzakki ?? "").toString().toLowerCase();
+                        const b = (rb.namaMuzakki ?? "").toString().toLowerCase();
+                        return compareNullable(a, b, (x, y) => x.localeCompare(y)) * dirMul;
+                    }
+                    if (key === "nominalRp") {
+                        const a = ra.nominalRp == null ? null : Number(ra.nominalRp);
+                        const b = rb.nominalRp == null ? null : Number(rb.nominalRp);
+                        return compareNullable(a, b, (x, y) => x - y) * dirMul;
+                    }
+                    if (key === "berasKg") {
+                        const a = ra.berasKg == null ? null : Number(ra.berasKg);
+                        const b = rb.berasKg == null ? null : Number(rb.berasKg);
+                        return compareNullable(a, b, (x, y) => x - y) * dirMul;
+                    }
+                    return 0;
+                });
+
+                $rows.empty();
+                if (!list.length) {
+                    $rows.append('<tr><td colspan="6" class="text-center text-muted">Tidak ada data</td></tr>');
+                    return;
+                }
+
+                for (const r of list) {
+                    $rows.append(
+                        '<tr>' +
+                            '<td>' + escapeHtml(r.no ?? "") + '</td>' +
+                            '<td>' + escapeHtml(r.tanggal ?? "") + '</td>' +
+                            '<td>' + escapeHtml(r.namaMuzakki ?? "") + '</td>' +
+                            '<td>' + escapeHtml(r.zakatTypeLabel || r.zakatType || "") + '</td>' +
+                            '<td class="text-right">' + (r.nominalRp == null ? '-' : rupiah(r.nominalRp)) + '</td>' +
+                            '<td class="text-right">' + (r.berasKg == null ? '-' : kg(r.berasKg)) + '</td>' +
+                        '</tr>'
+                    );
+                }
+            }
+
+            function buildCsvUrl() {
+                const from = $from.val();
+                const to = $to.val();
+                return `/index.php?__route=${encodeURIComponent('/api/reports/muzakki-detail.csv')}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+            }
+
+            async function load() {
+                const from = $from.val();
+                const to = $to.val();
+                if (!from || !to) return;
+
+                $periodeLabel.text(`Periode: ${formatIsoDateDisplay(from)} s/d ${formatIsoDateDisplay(to)}`);
+                $rows.empty().append('<tr><td colspan="6" class="text-center text-muted">Memuat...</td></tr>');
+
+                const res = await fetch(`/api/reports/muzakki-detail?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, {
+                    headers: {"Accept": "application/json"}
+                });
+
+                if (!res.ok) {
+                    const t = await res.text();
+                    $rows.empty().append('<tr><td colspan="6" class="text-center text-danger">' + escapeHtml(t || `Gagal load (${res.status})`) + '</td></tr>');
+                    return;
+                }
+
+                const data = await res.json();
+                currentRows = Array.isArray(data.rows) ? data.rows : [];
+                renderRows();
+
+                $sumNominal.text(rupiah(data.totalNominalRp ?? 0));
+                $sumBeras.text(kg(data.totalBerasKg ?? 0));
+                $sumJiwa.text(String(data.totalJiwa ?? 0));
+
+                const prof = data.institutionProfile;
+                if (prof) {
+                    $instansiHeader.removeClass("d-none");
+                    $ttdBox.removeClass("d-none");
+                    const namaInstansi = (prof.namaInstansi || "").trim();
+                    $instansiNama.text(namaInstansi
+                        ? `PANITIA AMIL ZAKAT, INFAQ, DAN SHODAQOH ${namaInstansi}`
+                        : "PANITIA AMIL ZAKAT, INFAQ, DAN SHODAQOH");
+                    const alamat = prof.alamatLengkap || "-";
+                    const kota = prof.kotaKabupaten ? `, ${prof.kotaKabupaten}` : "";
+                    $instansiAlamat.text(`${alamat}${kota}`);
+                    $instansiKontak.text(formatKontak(prof));
+
+                    const ttd = new Intl.DateTimeFormat("id-ID", {dateStyle: "long"}).format(new Date());
+                    $tanggalTtd.text(`${prof.kotaKabupaten || "-"}, ${ttd}`);
+                    $namaKetua.text(prof.namaKetua || "-");
+                    $namaBendahara.text(prof.namaBendahara || "-");
+                } else {
+                    $instansiHeader.addClass("d-none");
+                    $ttdBox.addClass("d-none");
+                    $instansiKontak.text("-");
+                }
+            }
+
+            $btnApply.on("click", load);
+            $btnReset.on("click", function () {
+                const iso = todayIso();
+                $from.val(iso);
+                $to.val(iso);
+                load();
+            });
+            $btnExport.on("click", function () {
+                window.location.href = buildCsvUrl();
+            });
+            $btnPrint.on("click", function () {
+                window.print();
+            });
+
+            $(document).on("click", ".sort-btn", function () {
+                const key = $(this).data("key");
+                if (!key) return;
+                const k = String(key);
+                const nextDir = (sortState.key === k)
+                    ? (sortState.dir === "asc" ? "desc" : "asc")
+                    : "asc";
+                setSort(k, nextDir);
+            });
+
+            const iso = todayIso();
+            $from.val(iso);
+            $to.val(iso);
+            setSort("tanggal", "asc");
+            load();
+        })();
+    });
+</script>
+<?php
+$content = ob_get_clean();
+
+require base_path('app/Views/layouts/admin.php');

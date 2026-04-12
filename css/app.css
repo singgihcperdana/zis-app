@@ -1,0 +1,253 @@
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  .main-header,
+  .main-sidebar,
+  .main-footer,
+  .control-sidebar,
+  .content-header,
+  .navbar,
+  .btn,
+  .no-print,
+  .breadcrumb,
+  .card-tools,
+  .pagination {
+    display: none !important;
+  }
+
+  body,
+  .wrapper,
+  .content-wrapper {
+    background: #fff !important;
+  }
+
+  .content-wrapper {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+
+  .content {
+    padding: 0 !important;
+  }
+
+  .card {
+    box-shadow: none !important;
+  }
+
+  .table-responsive {
+    overflow: visible !important;
+  }
+
+  a[href]:after {
+    content: "" !important;
+  }
+}
+
+.report-letterhead {
+  font-family: "Times New Roman", Times, serif;
+}
+
+.report-letterhead .letterhead-brand {
+    position: relative;
+}
+
+.report-letterhead .letterhead-logo {
+    display: none !important;
+    /*position: absolute;*/
+    /*left: 0;*/
+    /*top: 50%;*/
+    /*transform: translateY(-50%);*/
+    /*width: 160px;*/
+    /*object-fit: contain;*/
+}
+
+.report-letterhead .letterhead-text {
+    width: 100%;
+    text-align: center;
+}
+
+.report-letterhead .instansi-name {
+  color: #10a64a;
+  letter-spacing: 1px;
+  font-size: 24px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.report-letterhead .instansi-address {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.report-letterhead .instansi-contact {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.report-letterhead .line-double {
+  border-top: 2px solid #10a64a;
+  border-bottom: 1px solid #7fd29f;
+  height: 4px;
+  margin: 8px 0 18px;
+}
+
+.report-title {
+  font-family: "Times New Roman", Times, serif;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.report-title-underline {
+  display: inline-block;
+  border-bottom: 2px solid #444;
+  padding-bottom: 2px;
+}
+
+.report-section-title {
+  margin-top: 18px;
+}
+
+.report-meta,
+.report-summary,
+#ttdBox {
+  font-family: "Times New Roman", Times, serif;
+}
+
+#ttdBox .row {
+  margin-left: -20px;
+  margin-right: -20px;
+}
+
+#ttdBox [class*="col-"] {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.signature-spacer {
+  height: 90px;
+}
+
+.signature-name {
+  display: inline-block;
+  min-width: 210px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.signature-name::before {
+  content: "(___________________________)";
+  display: block;
+  font-weight: 400;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.suggestion-field {
+  position: relative;
+}
+
+.suggestion-field .form-control {
+  padding-right: 2.4rem;
+}
+
+.suggestion-clear {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  transform: translateY(-50%);
+  z-index: 3;
+  border: 0;
+  background: transparent;
+  color: #6c757d;
+  padding: 0.125rem;
+  line-height: 1;
+}
+
+.suggestion-clear:hover,
+.suggestion-clear:focus {
+  color: #343a40;
+  outline: none;
+}
+
+.suggestion-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1050;
+  background: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.suggestion-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: #212529;
+}
+
+.suggestion-menu-item:hover,
+.suggestion-menu-item:focus {
+  background: #f4f6f9;
+  outline: none;
+}
+
+@media (max-width: 576px) {
+  .report-letterhead .instansi-name {
+    font-size: 24px;
+  }
+}
+
+@media print {
+  .report-title {
+    font-size: 14pt;
+    letter-spacing: 0.3px;
+  }
+
+  .report-meta,
+  table {
+    font-size: 10.5pt;
+  }
+
+  th,
+  td {
+    padding: 4px 6px !important;
+    vertical-align: top !important;
+  }
+
+  .report-summary,
+  #ttdBox {
+    font-size: 11pt;
+  }
+
+  #ttdBox .row {
+    margin-left: -28px;
+    margin-right: -28px;
+  }
+
+  #ttdBox [class*="col-"] {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  .signature-spacer {
+    height: 110px;
+  }
+
+  .signature-name {
+    min-width: 225px;
+  }
+}

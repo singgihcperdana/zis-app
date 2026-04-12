@@ -9,6 +9,11 @@ use App\Core\Session;
 
 require_once __DIR__ . '/helpers.php';
 
+$composerAutoload = base_path('vendor/autoload.php');
+if (is_file($composerAutoload)) {
+    require_once $composerAutoload;
+}
+
 spl_autoload_register(static function (string $class): void {
     $prefix = 'App\\';
 

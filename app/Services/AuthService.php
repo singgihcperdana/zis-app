@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Password;
 use App\Core\Session;
 use App\Repositories\UserRepository;
 use RuntimeException;
@@ -17,22 +18,24 @@ final class AuthService
         $this->users = $users ?? new UserRepository();
     }
 
-    public function attempt(string $email, string $password): bool
+    public function attempt(string $identity, string $password): bool
     {
         try {
-            $user = $this->users->findByEmail($email);
+            $user = $this->users->findForLogin($identity);
         } catch (RuntimeException $exception) {
             throw $exception;
         }
 
-        if (!is_array($user) || !password_verify($password, (string) $user['password'])) {
+        if (!is_array($user) || !Password::verify($password, (string) $user['password'])) {
             return false;
         }
 
         $this->login([
             'id' => (string) $user['id'],
-            'name' => (string) $user['name'],
+            'name' => (string) $user['username'],
+            'username' => (string) $user['username'],
             'email' => (string) $user['email'],
+            'role' => (string) $user['role'],
             'source' => 'database',
         ]);
 

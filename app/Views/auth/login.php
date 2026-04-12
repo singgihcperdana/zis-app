@@ -4,57 +4,87 @@ $title = $title ?? 'Login';
 
 ob_start();
 ?>
-<main class="page" style="display:grid;place-items:center;min-height:100vh;">
-    <section class="card" style="width:min(100%, 480px);padding:32px;">
-        <div style="margin-bottom:24px;">
-            <p class="muted" style="margin:0 0 8px;">ZIS App Native PHP</p>
-            <h1 style="margin:0;font-size:32px;">Login</h1>
-            <p class="muted" style="margin:10px 0 0;">
-                Login menggunakan data user dari database MySQL.
-            </p>
+<main class="login-shell">
+    <section class="login-showcase">
+        <div class="showcase-art" aria-hidden="true">
+            <div class="showcase-card">
+                <div class="crescent"></div>
+                <div class="sparkles">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="charity-scene">
+                    <div class="coin"></div>
+                    <div class="donation-box"></div>
+                    <div class="mosque">
+                        <div class="minaret"></div>
+                        <div class="mosque-dome"></div>
+                        <div class="mosque-body"></div>
+                    </div>
+                    <div class="mosque-base"></div>
+                </div>
+            </div>
         </div>
+    </section>
 
-        <?php if (is_string($error) && $error !== ''): ?>
-            <div class="alert"><?= e($error); ?></div>
-        <?php endif; ?>
-
-        <form method="post" action="/login">
-            <input type="hidden" name="_csrf" value="<?= e($csrfToken); ?>">
-
-            <div class="field">
-                <label for="email">Email</label>
-                <input
-                    id="email"
-                    type="email"
-                    name="email"
-                    value="<?= e((string) $oldEmail); ?>"
-                    placeholder="admin@example.com"
-                    required
-                >
+    <section class="login-panel">
+        <div class="login-card">
+            <div class="login-brand">
+                <div class="login-brand-copy">
+                    <small>ZIS App</small>
+                    <h2>Masuk ke aplikasi</h2>
+                </div>
             </div>
 
-            <div class="field">
-                <label for="password">Password</label>
-                <input
-                    id="password"
-                    type="password"
-                    name="password"
-                    placeholder="Masukkan password"
-                    required
-                >
-            </div>
+            <?php if (is_string($error) && $error !== ''): ?>
+                <div class="alert alert-danger"><?= e($error); ?></div>
+            <?php endif; ?>
 
-            <button class="button" type="submit" style="width:100%;">Masuk</button>
-        </form>
+            <?php if (is_string($success ?? null) && $success !== ''): ?>
+                <div class="alert alert-success"><?= e($success); ?></div>
+            <?php endif; ?>
 
-        <div
-            style="margin-top:20px;padding:16px;border-radius:16px;background:#f7f1e3;border:1px solid #eadfca;"
-        >
-            <strong style="display:block;margin-bottom:6px;">Mode login database</strong>
-            <div class="muted">Gunakan email dan password dari tabel <code>users</code>.</div>
+            <form method="post" action="/login">
+                <input type="hidden" name="_csrf" value="<?= e($csrfToken); ?>">
+
+                <div class="input-with-icon">
+                    <label class="sr-only" for="username">Username</label>
+                    <i class="fa fa-user"></i>
+                    <input
+                        id="username"
+                        class="form-control"
+                        type="text"
+                        name="username"
+                        value="<?= e((string) $oldLogin); ?>"
+                        placeholder="Username atau Email"
+                        required
+                    >
+                </div>
+
+                <div class="input-with-icon">
+                    <label class="sr-only" for="password">Password</label>
+                    <i class="fa fa-lock"></i>
+                    <input
+                        id="password"
+                        class="form-control"
+                        type="password"
+                        name="password"
+                        placeholder="Password"
+                        required
+                    >
+                </div>
+
+                <button class="btn btn-block btn-login" type="submit">Masuk Sekarang</button>
+            </form>
+
+            <a class="login-secondary-link" href="/public/dashboard" target="_blank" rel="noopener">
+                <i class="fas fa-tv"></i>
+                <span>Lihat Dashboard Publik</span>
+            </a>
         </div>
     </section>
 </main>
 <?php
 $content = ob_get_clean();
-require base_path('app/Views/layouts/main.php');
+require base_path('app/Views/layouts/auth.php');
