@@ -84,7 +84,7 @@ ob_start();
                 }
                 const list = await response.json();
                 render(list.filter(function (u) {
-                    return u.role !== 'ADMIN' && u.active === true;
+                    return u.role !== 'ADMIN';
                 }));
             } catch (error) {
                 showError(String(error.message || error));
@@ -99,7 +99,7 @@ ob_start();
                     '<td>' + u.username + '</td>' +
                     '<td>' + u.email + '</td>' +
                     '<td>' + u.role + '</td>' +
-                    '<td>' + (u.active ? 'Yes' : 'No') + '</td>' +
+                    '<td><span class="badge ' + (u.active ? 'badge-success' : 'badge-danger') + '">' + (u.active ? 'Yes' : 'No') + '</span></td>' +
                     '<td></td>';
 
                 const actions = tr.querySelector('td:last-child');
@@ -108,31 +108,35 @@ ob_start();
                 btnEdit.href = '/user/edit/' + encodeURIComponent(u.id);
                 btnEdit.textContent = 'Edit';
 
-                const btnDelete = document.createElement('button');
-                btnDelete.className = 'btn btn-sm btn-outline-danger';
-                btnDelete.type = 'button';
-                btnDelete.textContent = 'Hapus';
-                btnDelete.addEventListener('click', function () {
-                    removeUser(u.id);
+                const btnToggle = document.createElement('button');
+                btnToggle.className = 'btn btn-sm ' + (u.active ? 'btn-outline-danger' : 'btn-outline-success');
+                btnToggle.type = 'button';
+                btnToggle.textContent = u.active ? 'Nonaktifkan' : 'Aktifkan';
+                btnToggle.addEventListener('click', function () {
+                    toggleUserActive(u);
                 });
 
                 actions.appendChild(btnEdit);
-                actions.appendChild(btnDelete);
+                actions.appendChild(btnToggle);
                 tbody.appendChild(tr);
             });
         }
 
-        async function removeUser(id) {
-            if (!window.confirm('Hapus user ini?')) {
+        async function toggleUserActive(user) {
+            const actionLabel = user.active ? 'menonaktifkan' : 'mengaktifkan';
+            const confirmLabel = user.active ? 'Nonaktifkan' : 'Aktifkan';
+
+            if (!window.confirm(confirmLabel + ' user "' + user.username + '"?')) {
                 return;
             }
             try {
-                const response = await fetch('/api/users/' + encodeURIComponent(id), { method: 'DELETE' });
-                if (!response.ok && response.status !== 204) {
+                const response = await fetch('/api/users/' + encodeURIComponent(user.id) + '/toggle-active', { method: 'POST' });
+                if (!response.ok) {
                     const payload = await response.json().catch(function () { return {}; });
-                    throw new Error(payload.message || 'Gagal menghapus user');
+                    throw new Error(payload.message || 'Gagal ' + actionLabel + ' user');
                 }
-                showSuccess('User dinonaktifkan');
+                const payload = await response.json().catch(function () { return {}; });
+                showSuccess(payload.message || ('User berhasil ' + actionLabel));
                 await loadUsers();
             } catch (error) {
                 showError(String(error.message || error));

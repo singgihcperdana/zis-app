@@ -136,6 +136,10 @@ return static function (Router $router): void {
         'auth' => true,
         'roles' => ['ADMIN'],
     ]);
+    $router->post('/api/users/{id}/toggle-active', [UserManagementController::class, 'toggleActiveApi'], [
+        'auth' => true,
+        'roles' => ['ADMIN'],
+    ]);
     $router->delete('/api/users/{id}', [UserManagementController::class, 'deactivateApi'], [
         'auth' => true,
         'roles' => ['ADMIN'],

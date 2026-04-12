@@ -191,4 +191,23 @@ final class UserRepository
             );
         }
     }
+
+    public function setActive(string $id, bool $active): void
+    {
+        try {
+            $statement = Database::connection()->prepare(
+                'UPDATE users SET active = :active WHERE id = :id'
+            );
+            $statement->execute([
+                'id' => $id,
+                'active' => $active ? 1 : 0,
+            ]);
+        } catch (PDOException $exception) {
+            throw new RuntimeException(
+                $active ? 'Aktifkan user gagal.' : 'Nonaktifkan user gagal.',
+                (int) $exception->getCode(),
+                $exception
+            );
+        }
+    }
 }
