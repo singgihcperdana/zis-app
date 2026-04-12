@@ -77,4 +77,55 @@ final class AuthController
 
         Response::redirect('/login');
     }
+
+    public function showUpdatePassword(): void
+    {
+        View::render('auth/update-password', [
+            'title' => 'Update Password',
+            'csrfToken' => Session::csrfToken(),
+            'user' => $this->auth->user(),
+            'successMessage' => Session::pullFlash('success'),
+            'errorMessage' => Session::pullFlash('error'),
+        ]);
+    }
+
+    public function updatePassword(): void
+    {
+        $csrfToken = $_POST['_csrf'] ?? null;
+
+        if (!Session::verifyCsrf(is_string($csrfToken) ? $csrfToken : null)) {
+            Session::flash('error', 'Token keamanan tidak valid. Silakan coba lagi.');
+            Response::redirect('/update-password');
+        }
+
+        $currentPassword = (string) ($_POST['current_password'] ?? '');
+        $newPassword = (string) ($_POST['new_password'] ?? '');
+        $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
+        $user = $this->auth->user();
+        $userId = is_array($user) ? (string) ($user['id'] ?? '') : '';
+
+        if ($currentPassword === '' || $newPassword === '' || $confirmPassword === '') {
+            Session::flash('error', 'Password lama, password baru, dan konfirmasi password wajib diisi.');
+            Response::redirect('/update-password');
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            Session::flash('error', 'Konfirmasi password baru tidak cocok.');
+            Response::redirect('/update-password');
+        }
+
+        if (strlen($newPassword) < 6) {
+            Session::flash('error', 'Password baru minimal 6 karakter.');
+            Response::redirect('/update-password');
+        }
+
+        try {
+            $this->auth->changePassword($userId, $currentPassword, $newPassword);
+            Session::flash('success', 'Password berhasil diperbarui.');
+            Response::redirect('/update-password');
+        } catch (RuntimeException $exception) {
+            Session::flash('error', $exception->getMessage());
+            Response::redirect('/update-password');
+        }
+    }
 }
