@@ -59,7 +59,16 @@ return static function (Router $router): void {
     $router->get('/reports/rekap', [ReportController::class, 'rekapPage'], [
         'auth' => true,
     ]);
+    $router->get('/reports/muzakki-detail', [ReportController::class, 'muzakkiDetailPage'], [
+        'auth' => true,
+    ]);
     $router->get('/api/reports/rekap-zis', [ReportController::class, 'rekapZisApi'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/reports/muzakki-detail', [ReportController::class, 'muzakkiDetailApi'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/reports/muzakki-detail.csv', [ReportController::class, 'muzakkiDetailCsv'], [
         'auth' => true,
     ]);
     $router->get('/api/reports/kwitansi/{paymentId}/template.pdf', [ReportController::class, 'kwitansiTemplatePdf'], [

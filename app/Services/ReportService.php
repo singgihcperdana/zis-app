@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Repositories\InstitutionProfileRepository;
+use App\Repositories\MuzakkiPersonRepository;
 use App\Repositories\ZakatPaymentRepository;
 use DateTimeImmutable;
 use RuntimeException;
@@ -44,13 +45,16 @@ final class ReportService
     ];
 
     private ZakatPaymentRepository $payments;
+    private MuzakkiPersonRepository $muzakki;
     private InstitutionProfileRepository $profiles;
 
     public function __construct(
         ?ZakatPaymentRepository $payments = null,
+        ?MuzakkiPersonRepository $muzakki = null,
         ?InstitutionProfileRepository $profiles = null
     ) {
         $this->payments = $payments ?? new ZakatPaymentRepository();
+        $this->muzakki = $muzakki ?? new MuzakkiPersonRepository();
         $this->profiles = $profiles ?? new InstitutionProfileRepository();
     }
 
@@ -98,6 +102,115 @@ final class ReportService
                 'namaBendahara' => $profile['nama_bendahara'] !== null ? (string) $profile['nama_bendahara'] : null,
             ] : null,
         ];
+    }
+
+    public function muzakkiDetail(string $fromDate, string $toDate): array
+    {
+        $from = $this->parseIsoDate($fromDate, 'fromDate');
+        $to = $this->parseIsoDate($toDate, 'toDate');
+
+        if ($to < $from) {
+            throw new RuntimeException('toDate tidak boleh lebih kecil dari fromDate');
+        }
+
+        $fromInclusive = $from->format('Y-m-d') . ' 00:00:00';
+        $toExclusive = $to->modify('+1 day')->format('Y-m-d') . ' 00:00:00';
+
+        $rawRows = $this->muzakki->findReportRows($fromInclusive, $toExclusive);
+        $rows = [];
+        $paymentSeen = [];
+        $totalNominal = 0.0;
+        $totalBeras = 0.0;
+        $totalJiwa = 0;
+        $counter = 0;
+
+        foreach ($rawRows as $row) {
+            $counter++;
+            $jumlahJiwa = isset($row['jumlah_jiwa']) ? (int) $row['jumlah_jiwa'] : 0;
+            $jumlahUang = $row['jumlah_uang'] !== null ? (float) $row['jumlah_uang'] : null;
+            $berasKg = $row['berat_beras_kg'] !== null ? (float) $row['berat_beras_kg'] : null;
+
+            $nominalPerOrang = $this->perOrang($jumlahUang, $jumlahJiwa, 0);
+            $berasPerOrang = $this->perOrang($berasKg, $jumlahJiwa, 2);
+            $zakatType = $row['zakat_type'] !== null ? (string) $row['zakat_type'] : null;
+
+            $rows[] = [
+                'no' => $counter,
+                'tanggal' => isset($row['payment_at']) && is_string($row['payment_at']) ? substr($row['payment_at'], 0, 10) : null,
+                'namaMuzakki' => (string) ($row['nama'] ?? ''),
+                'zakatType' => $zakatType,
+                'zakatTypeLabel' => $zakatType !== null ? ($this->zisTypeLabel($zakatType) ?? $zakatType) : null,
+                'nominalRp' => $nominalPerOrang,
+                'berasKg' => $berasPerOrang,
+            ];
+
+            $paymentId = (string) ($row['payment_id'] ?? '');
+            if ($paymentId !== '' && !isset($paymentSeen[$paymentId])) {
+                $paymentSeen[$paymentId] = true;
+                $totalNominal += $jumlahUang ?? 0.0;
+                $totalBeras += $berasKg ?? 0.0;
+                $totalJiwa += max(0, $jumlahJiwa);
+            }
+        }
+
+        $profile = $this->profiles->first();
+
+        return [
+            'fromDate' => $from->format('Y-m-d'),
+            'toDate' => $to->format('Y-m-d'),
+            'rows' => $rows,
+            'totalNominalRp' => $totalNominal,
+            'totalBerasKg' => $totalBeras,
+            'totalJiwa' => $totalJiwa,
+            'institutionProfile' => is_array($profile) ? [
+                'id' => (string) $profile['id'],
+                'namaInstansi' => (string) ($profile['nama_instansi'] ?? ''),
+                'kotaKabupaten' => (string) ($profile['kota_kabupaten'] ?? ''),
+                'alamatLengkap' => (string) ($profile['alamat_lengkap'] ?? ''),
+                'nomorTelepon' => $profile['nomor_telepon'] !== null ? (string) $profile['nomor_telepon'] : null,
+                'email' => $profile['email'] !== null ? (string) $profile['email'] : null,
+                'namaKetua' => $profile['nama_ketua'] !== null ? (string) $profile['nama_ketua'] : null,
+                'namaBendahara' => $profile['nama_bendahara'] !== null ? (string) $profile['nama_bendahara'] : null,
+            ] : null,
+        ];
+    }
+
+    public function muzakkiDetailCsv(array $report): string
+    {
+        $lines = [];
+        $lines[] = 'Periode,' . $this->csvValue($report['fromDate'] ?? '') . ',' . $this->csvValue($report['toDate'] ?? '');
+
+        $profile = $report['institutionProfile'] ?? null;
+        if (is_array($profile)) {
+            $lines[] = 'Instansi,' . $this->csvValue($profile['namaInstansi'] ?? '');
+            $lines[] = 'Kota/Kabupaten,' . $this->csvValue($profile['kotaKabupaten'] ?? '');
+            $lines[] = 'Alamat,' . $this->csvValue($profile['alamatLengkap'] ?? '');
+            $lines[] = '';
+        }
+
+        $lines[] = 'No,Tanggal,Nama Muzakki,Jenis,Nominal (Rp),Beras (Kg)';
+        foreach (($report['rows'] ?? []) as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $lines[] = implode(',', [
+                (string) ($row['no'] ?? ''),
+                $this->csvValue($row['tanggal'] ?? ''),
+                $this->csvValue($row['namaMuzakki'] ?? ''),
+                $this->csvValue(($row['zakatTypeLabel'] ?? '') !== '' ? $row['zakatTypeLabel'] : ($row['zakatType'] ?? '')),
+                $row['nominalRp'] === null ? '' : (string) $row['nominalRp'],
+                $row['berasKg'] === null ? '' : (string) $row['berasKg'],
+            ]);
+        }
+
+        $lines[] = '';
+        $lines[] = 'TOTAL,,,';
+        $lines[] = 'total_nominal_rp,' . (string) ($report['totalNominalRp'] ?? 0);
+        $lines[] = 'total_beras_kg,' . (string) ($report['totalBerasKg'] ?? 0);
+        $lines[] = 'total_jiwa,' . (string) ($report['totalJiwa'] ?? 0);
+
+        return implode("\n", $lines) . "\n";
     }
 
     public function kwitansi(string $paymentId): array
@@ -305,6 +418,52 @@ final class ReportService
     private function safe(string $value): string
     {
         return trim($value);
+    }
+
+    private function perOrang(?float $total, int $jumlahJiwa, int $scale): ?float
+    {
+        if ($total === null) {
+            return null;
+        }
+
+        if ($jumlahJiwa <= 0) {
+            return $total;
+        }
+
+        $divided = $total / $jumlahJiwa;
+        return $scale === 0 ? round($divided, 0) : round($divided, $scale);
+    }
+
+    private function zisTypeLabel(string $type): ?string
+    {
+        $labels = [
+            'ZAKAT_FITRAH_BERAS' => 'Zakat Fitrah (Beras)',
+            'ZAKAT_FITRAH_UANG' => 'Zakat Fitrah (Uang)',
+            'ZAKAT_MAL' => 'Zakat Mal',
+            'INFAQ_SEDEKAH' => 'Infaq/Sedekah',
+            'FIDIAH' => 'Fidiah',
+        ];
+
+        return $labels[$type] ?? null;
+    }
+
+    private function csvValue(mixed $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        $string = (string) $value;
+        $mustQuote = str_contains($string, ',')
+            || str_contains($string, '"')
+            || str_contains($string, "\n")
+            || str_contains($string, "\r");
+
+        if (!$mustQuote) {
+            return $string;
+        }
+
+        return '"' . str_replace('"', '""', $string) . '"';
     }
 
     private function parseIsoDate(string $value, string $field): DateTimeImmutable

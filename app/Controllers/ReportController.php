@@ -65,6 +65,58 @@ final class ReportController
         }
     }
 
+    public function muzakkiDetailPage(): void
+    {
+        View::render('reports/muzakki-detail', [
+            'title' => 'Data Muzakki',
+            'pageTitle' => 'Data Muzakki',
+            'breadcrumbs' => ['Report', 'Data Muzakki'],
+            'csrfToken' => \App\Core\Session::csrfToken(),
+            'user' => $this->auth->user(),
+        ]);
+    }
+
+    public function muzakkiDetailApi(): void
+    {
+        $from = isset($_GET['from']) ? trim((string) $_GET['from']) : '';
+        $to = isset($_GET['to']) ? trim((string) $_GET['to']) : '';
+
+        try {
+            Response::json($this->reports->muzakkiDetail($from, $to));
+        } catch (RuntimeException $exception) {
+            $status = str_contains(strtolower($exception->getMessage()), 'wajib')
+                || str_contains(strtolower($exception->getMessage()), 'tidak boleh')
+                || str_contains(strtolower($exception->getMessage()), 'format')
+                ? 422
+                : 500;
+
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], $status);
+        }
+    }
+
+    public function muzakkiDetailCsv(): void
+    {
+        $from = isset($_GET['from']) ? trim((string) $_GET['from']) : '';
+        $to = isset($_GET['to']) ? trim((string) $_GET['to']) : '';
+
+        try {
+            $report = $this->reports->muzakkiDetail($from, $to);
+            $csv = $this->reports->muzakkiDetailCsv($report);
+            $filename = sprintf('muzakki-detail_%s_%s.csv', $report['fromDate'] ?? $from, $report['toDate'] ?? $to);
+
+            http_response_code(200);
+            header('Content-Type: text/csv; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            echo "\xEF\xBB\xBF" . $csv;
+            exit;
+        } catch (RuntimeException $exception) {
+            Response::abort(422, $exception->getMessage());
+        }
+    }
+
     public function kwitansiTemplatePrint(string $paymentId): void
     {
         $pdfRoute = '/api/reports/kwitansi/' . rawurlencode($paymentId) . '/template.pdf';
