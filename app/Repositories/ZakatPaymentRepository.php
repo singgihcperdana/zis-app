@@ -62,7 +62,7 @@ final class ZakatPaymentRepository
             $this->persistReceiptSequence($connection, $year, $next);
 
             $payment['receipt_sequence'] = $next;
-            $payment['receipt_number'] = sprintf('MA/%d/%06d', $year, $next);
+            $payment['receipt_number'] = sprintf('MA/%d/%04d', $year, $next);
 
             $statement = $connection->prepare(
                 'INSERT INTO zakat_payment (
