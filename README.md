@@ -127,11 +127,7 @@ CREATE TABLE users (
 
 Password harus disimpan dalam bentuk hash `password_hash(...)`.
 
-Cara cepat membuat hash password:
-
-```bash
-php tools/hash-password.php "password-kamu"
-```
+Hash password aplikasi sekarang ditangani terpusat melalui `App\Core\Password`.
 
 Seed user bawaan:
 
