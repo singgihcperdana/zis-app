@@ -139,4 +139,23 @@ final class UserManagementController
             ], 400);
         }
     }
+
+    public function toggleActiveApi(string $id): void
+    {
+        try {
+            $existing = $this->users->getById($id);
+            $nextActive = !((bool) ($existing['active'] ?? false));
+            $this->users->setActive($id, $nextActive);
+
+            Response::json([
+                'success' => true,
+                'message' => $nextActive ? 'User diaktifkan' : 'User dinonaktifkan',
+            ]);
+        } catch (RuntimeException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], 400);
+        }
+    }
 }

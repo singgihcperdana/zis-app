@@ -118,6 +118,16 @@ final class UserManagementService
         $this->users->deactivate($id);
     }
 
+    public function setActive(string $id, bool $active): void
+    {
+        $existing = $this->getById($id);
+        if (($existing['role'] ?? '') === 'ADMIN') {
+            throw new RuntimeException('User ADMIN tidak boleh diubah statusnya melalui UI ini');
+        }
+
+        $this->users->setActive($id, $active);
+    }
+
     private function uuid(): string
     {
         $data = random_bytes(16);
