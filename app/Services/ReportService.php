@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Repositories\InstitutionProfileRepository;
 use App\Repositories\ZakatPaymentRepository;
+use DateTimeImmutable;
 use RuntimeException;
 use setasign\Fpdi\Fpdi;
 
@@ -51,6 +52,52 @@ final class ReportService
     ) {
         $this->payments = $payments ?? new ZakatPaymentRepository();
         $this->profiles = $profiles ?? new InstitutionProfileRepository();
+    }
+
+    public function rekapZis(string $fromDate, string $toDate): array
+    {
+        $from = $this->parseIsoDate($fromDate, 'fromDate');
+        $to = $this->parseIsoDate($toDate, 'toDate');
+
+        if ($to < $from) {
+            throw new RuntimeException('toDate tidak boleh lebih kecil dari fromDate');
+        }
+
+        $fromInclusive = $from->format('Y-m-d') . ' 00:00:00';
+        $toExclusive = $to->modify('+1 day')->format('Y-m-d') . ' 00:00:00';
+
+        $summary = $this->payments->rekapSummary($fromInclusive, $toExclusive);
+        $fitrahUang = (float) ($summary['fitrah_uang'] ?? 0);
+        $fitrahBeras = (float) ($summary['fitrah_beras'] ?? 0);
+        $fidiah = (float) ($summary['fidiah'] ?? 0);
+        $zakatMal = (float) ($summary['zakat_mal'] ?? 0);
+        $infaqSedekah = (float) ($summary['infaq_sedekah'] ?? 0);
+        $totalUangMasuk = $fitrahUang + $fidiah + $zakatMal + $infaqSedekah;
+        $totalMuzakkiFitrahJiwa = $this->payments->sumJiwaFitrah($fromInclusive, $toExclusive);
+
+        $profile = $this->profiles->first();
+
+        return [
+            'fromDate' => $from->format('Y-m-d'),
+            'toDate' => $to->format('Y-m-d'),
+            'zakatFitrahUang' => $fitrahUang,
+            'zakatFitrahBerasKg' => $fitrahBeras,
+            'fidiah' => $fidiah,
+            'zakatMal' => $zakatMal,
+            'infaqSedekah' => $infaqSedekah,
+            'totalUangMasuk' => $totalUangMasuk,
+            'totalMuzakkiFitrahJiwa' => $totalMuzakkiFitrahJiwa,
+            'institutionProfile' => is_array($profile) ? [
+                'id' => (string) $profile['id'],
+                'namaInstansi' => (string) ($profile['nama_instansi'] ?? ''),
+                'kotaKabupaten' => (string) ($profile['kota_kabupaten'] ?? ''),
+                'alamatLengkap' => (string) ($profile['alamat_lengkap'] ?? ''),
+                'nomorTelepon' => $profile['nomor_telepon'] !== null ? (string) $profile['nomor_telepon'] : null,
+                'email' => $profile['email'] !== null ? (string) $profile['email'] : null,
+                'namaKetua' => $profile['nama_ketua'] !== null ? (string) $profile['nama_ketua'] : null,
+                'namaBendahara' => $profile['nama_bendahara'] !== null ? (string) $profile['nama_bendahara'] : null,
+            ] : null,
+        ];
     }
 
     public function kwitansi(string $paymentId): array
@@ -258,6 +305,21 @@ final class ReportService
     private function safe(string $value): string
     {
         return trim($value);
+    }
+
+    private function parseIsoDate(string $value, string $field): DateTimeImmutable
+    {
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            throw new RuntimeException($field . ' wajib diisi');
+        }
+
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $trimmed);
+        if (!$date instanceof DateTimeImmutable || $date->format('Y-m-d') !== $trimmed) {
+            throw new RuntimeException('Format tanggal tidak valid');
+        }
+
+        return $date;
     }
 
     private function encodePdfText(string $value): string

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Response;
+use App\Core\View;
 use App\Services\AuthService;
 use App\Services\ReportService;
 use RuntimeException;
@@ -29,6 +30,38 @@ final class ReportController
                 'success' => false,
                 'message' => $exception->getMessage(),
             ], 404);
+        }
+    }
+
+    public function rekapPage(): void
+    {
+        View::render('reports/rekap', [
+            'title' => 'Rekap ZIS',
+            'pageTitle' => 'Rekap ZIS',
+            'breadcrumbs' => ['Report', 'Rekap ZIS'],
+            'csrfToken' => \App\Core\Session::csrfToken(),
+            'user' => $this->auth->user(),
+        ]);
+    }
+
+    public function rekapZisApi(): void
+    {
+        $from = isset($_GET['from']) ? trim((string) $_GET['from']) : '';
+        $to = isset($_GET['to']) ? trim((string) $_GET['to']) : '';
+
+        try {
+            Response::json($this->reports->rekapZis($from, $to));
+        } catch (RuntimeException $exception) {
+            $status = str_contains(strtolower($exception->getMessage()), 'wajib')
+                || str_contains(strtolower($exception->getMessage()), 'tidak boleh')
+                || str_contains(strtolower($exception->getMessage()), 'format')
+                ? 422
+                : 500;
+
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], $status);
         }
     }
 

@@ -421,6 +421,72 @@ final class ZakatPaymentRepository
         }
     }
 
+    public function rekapSummary(string $fromInclusive, string $toExclusive): array
+    {
+        try {
+            $statement = Database::connection()->prepare(
+                "SELECT
+                    COALESCE(SUM(CASE
+                        WHEN q.zakat_type = 'ZAKAT_FITRAH_UANG' THEN COALESCE(p.jumlah_uang, 0)
+                        ELSE 0
+                    END), 0) AS fitrah_uang,
+                    COALESCE(SUM(CASE
+                        WHEN q.zakat_type = 'ZAKAT_FITRAH_BERAS' THEN COALESCE(p.berat_beras_kg, 0)
+                        ELSE 0
+                    END), 0) AS fitrah_beras,
+                    COALESCE(SUM(COALESCE(p.jumlah_uang_fidiah, 0)), 0) AS fidiah,
+                    COALESCE(SUM(COALESCE(p.jumlah_uang_zakat_mal, 0)), 0) AS zakat_mal,
+                    COALESCE(SUM(COALESCE(p.jumlah_uang_infaq_sedekah, 0)), 0) AS infaq_sedekah
+                 FROM zakat_payment p
+                 LEFT JOIN zakat_quality q ON q.id = p.zakat_quality_id
+                 WHERE p.payment_at >= :from_inclusive
+                   AND p.payment_at < :to_exclusive
+                   AND p.canceled = 0"
+            );
+            $statement->execute([
+                'from_inclusive' => $fromInclusive,
+                'to_exclusive' => $toExclusive,
+            ]);
+
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+            return is_array($row) ? $row : [];
+        } catch (PDOException $exception) {
+            throw new RuntimeException(
+                'Gagal menghitung rekap ZIS.',
+                (int) $exception->getCode(),
+                $exception
+            );
+        }
+    }
+
+    public function sumJiwaFitrah(string $fromInclusive, string $toExclusive): int
+    {
+        try {
+            $statement = Database::connection()->prepare(
+                "SELECT COALESCE(SUM(COALESCE(p.jumlah_jiwa, 0)), 0)
+                 FROM zakat_payment p
+                 LEFT JOIN zakat_quality q ON q.id = p.zakat_quality_id
+                 WHERE p.payment_at >= :from_inclusive
+                   AND p.payment_at < :to_exclusive
+                   AND p.canceled = 0
+                   AND q.zakat_type IN ('ZAKAT_FITRAH_BERAS', 'ZAKAT_FITRAH_UANG')"
+            );
+            $statement->execute([
+                'from_inclusive' => $fromInclusive,
+                'to_exclusive' => $toExclusive,
+            ]);
+
+            return (int) $statement->fetchColumn();
+        } catch (PDOException $exception) {
+            throw new RuntimeException(
+                'Gagal menghitung total jiwa fitrah.',
+                (int) $exception->getCode(),
+                $exception
+            );
+        }
+    }
+
     private function lockReceiptSequence(PDO $connection, int $year): int
     {
         $statement = $connection->prepare(
