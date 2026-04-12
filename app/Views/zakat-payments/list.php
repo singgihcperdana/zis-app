@@ -215,7 +215,7 @@ ob_start();
                         const receivedBy = item.receivedByName ? escapeHtml(item.receivedByName) : '-';
                         const payerPhone = item.payerPhone ? escapeHtml(item.payerPhone) : '-';
                         const paymentMethod = item.paymentMethod === 'TRANSFER' ? 'Transfer' : (item.paymentMethod === 'CASH' ? 'Cash' : '-');
-                        const printHtml = '<button class="btn btn-xs btn-success mr-1" type="button" disabled><i class="fas fa-print"></i> Kwitansi</button>';
+                        const printHtml = '<a class="btn btn-xs btn-success mr-1" href="/api/reports/kwitansi/' + encodeURIComponent(item.id) + '/template/print" target="_blank" rel="noopener"><i class="fas fa-print"></i> Kwitansi</a>';
                         const editHtml = '<a class="btn btn-xs btn-info mr-1" href="/zakat-payments/' + encodeURIComponent(item.id) + '/edit"><i class="fas fa-edit"></i> Edit</a>';
                         const actionHtml = (!CAN_MUTATE || item.canceled)
                             ? printHtml

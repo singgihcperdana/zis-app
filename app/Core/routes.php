@@ -6,6 +6,7 @@ use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\InstitutionProfileController;
 use App\Controllers\InternalController;
+use App\Controllers\ReportController;
 use App\Controllers\UserManagementController;
 use App\Controllers\ZakatPaymentController;
 use App\Controllers\ZakatQualityController;
@@ -51,6 +52,15 @@ return static function (Router $router): void {
     $router->post('/api/zakat-payments/{id}/cancel', [ZakatPaymentController::class, 'cancelApi'], [
         'auth' => true,
         'roles' => ['ADMIN', 'OPERATOR'],
+    ]);
+    $router->get('/api/reports/kwitansi/{paymentId}', [ReportController::class, 'kwitansiApi'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/reports/kwitansi/{paymentId}/template.pdf', [ReportController::class, 'kwitansiTemplatePdf'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/reports/kwitansi/{paymentId}/template/print', [ReportController::class, 'kwitansiTemplatePrint'], [
+        'auth' => true,
     ]);
     $router->get('/settings/institution-profile', [InstitutionProfileController::class, 'edit'], [
         'auth' => true,
