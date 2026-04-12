@@ -17,10 +17,10 @@ final class AuthService
         $this->users = $users ?? new UserRepository();
     }
 
-    public function attempt(string $email, string $password): bool
+    public function attempt(string $identity, string $password): bool
     {
         try {
-            $user = $this->users->findByEmail($email);
+            $user = $this->users->findForLogin($identity);
         } catch (RuntimeException $exception) {
             throw $exception;
         }
@@ -31,8 +31,10 @@ final class AuthService
 
         $this->login([
             'id' => (string) $user['id'],
-            'name' => (string) $user['name'],
+            'name' => (string) $user['username'],
+            'username' => (string) $user['username'],
             'email' => (string) $user['email'],
+            'role' => (string) $user['role'],
             'source' => 'database',
         ]);
 

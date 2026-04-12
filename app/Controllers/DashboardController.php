@@ -20,15 +20,21 @@ final class DashboardController
 
     public function index(): void
     {
+        $user = $this->auth->user();
+
         View::render('dashboard/index', [
             'title' => 'Dashboard',
-            'user' => $this->auth->user(),
+            'pageTitle' => 'Dashboard',
+            'breadcrumbs' => ['Dashboard'],
+            'flashError' => Session::pullFlash('error'),
+            'flashSuccess' => Session::pullFlash('success'),
+            'user' => $user,
             'csrfToken' => Session::csrfToken(),
-            'dbConfig' => [
-                'host' => Config::get('database.host'),
-                'port' => Config::get('database.port'),
+            'stats' => [
+                'appName' => Config::get('app.name', 'ZIS App'),
                 'database' => Config::get('database.database'),
-                'username' => Config::get('database.username'),
+                'host' => Config::get('database.host'),
+                'role' => is_array($user) ? (string) ($user['role'] ?? '-') : '-',
             ],
         ]);
     }
