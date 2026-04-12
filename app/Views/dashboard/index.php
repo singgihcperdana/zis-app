@@ -1,12 +1,32 @@
 <?php
 
 $title = $title ?? 'Dashboard';
-$databaseName = (string) ($stats['database'] ?? '-');
-$databaseHost = (string) ($stats['host'] ?? '-');
-$currentRole = (string) ($stats['role'] ?? '-');
 
 ob_start();
 ?>
+<style>
+    .dashboard-filter-actions {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        height: 100%;
+        padding-bottom: 1rem;
+    }
+
+    .dashboard-filter-actions .btn,
+    .dashboard-filter-actions .btn-group {
+        margin-right: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    @media (max-width: 767.98px) {
+        .dashboard-filter-actions {
+            padding-bottom: 0;
+        }
+    }
+</style>
+
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
@@ -68,11 +88,11 @@ ob_start();
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info">
                     <div class="inner">
-                        <h3><?= e($databaseName); ?></h3>
-                        <p>Database Aktif</p>
+                        <h3 id="valTotalUang">-</h3>
+                        <p>Total Uang Masuk</p>
                     </div>
                     <div class="icon">
-                        <i class="fas fa-database"></i>
+                        <i class="fas fa-money-bill-wave"></i>
                     </div>
                     <a class="small-box-footer" href="/reports/rekap">Cetak Rekap <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
@@ -80,11 +100,11 @@ ob_start();
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-success">
                     <div class="inner">
-                        <h3><?= e($databaseHost); ?></h3>
-                        <p>Host Database</p>
+                        <h3 id="valTotalBeras">-</h3>
+                        <p>Total Beras Masuk</p>
                     </div>
                     <div class="icon">
-                        <i class="fas fa-server"></i>
+                        <i class="fas fa-seedling"></i>
                     </div>
                     <a class="small-box-footer" href="/reports/rekap">Lihat rincian <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
@@ -92,11 +112,11 @@ ob_start();
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-warning">
                     <div class="inner">
-                        <h3><?= e((string) ($user['username'] ?? $user['name'] ?? '-')); ?></h3>
-                        <p>User Aktif</p>
+                        <h3 id="valTotalTransaksi">-</h3>
+                        <p>Total Transaksi</p>
                     </div>
                     <div class="icon">
-                        <i class="fas fa-user"></i>
+                        <i class="fas fa-receipt"></i>
                     </div>
                     <a class="small-box-footer" href="/zakat-payments/list">Riwayat Pembayaran <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
@@ -104,8 +124,8 @@ ob_start();
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-danger">
                     <div class="inner">
-                        <h3><?= e($currentRole); ?></h3>
-                        <p>Role Aktif</p>
+                        <h3 id="valTotalJiwa">-</h3>
+                        <p>Total Muzakki (Fitrah)</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-users"></i>
@@ -121,15 +141,15 @@ ob_start();
                     <div class="inner">
                         <div class="row mt-2">
                             <div class="col-6 text-center border-right">
-                                <div class="text-uppercase" style="font-size: 0.8rem;">Email</div>
-                                <div style="font-size: 1.5rem; font-weight: 700; line-height: 1.1;"><?= e((string) ($user['email'] ?? '-')); ?></div>
+                                <div class="text-uppercase" style="font-size: 0.8rem;">Cash</div>
+                                <div id="valUangCash" style="font-size: 2rem; font-weight: 700; line-height: 1.1;">-</div>
                             </div>
                             <div class="col-6 text-center">
-                                <div class="text-uppercase" style="font-size: 0.8rem;">Source</div>
-                                <div style="font-size: 1.5rem; font-weight: 700; line-height: 1.1;"><?= e((string) ($user['source'] ?? '-')); ?></div>
+                                <div class="text-uppercase" style="font-size: 0.8rem;">Transfer</div>
+                                <div id="valUangTransfer" style="font-size: 2rem; font-weight: 700; line-height: 1.1;">-</div>
                             </div>
                         </div>
-                        <p>Informasi Session Login</p>
+                        <p>Pembayaran Uang per Metode</p>
                     </div>
                     <a class="small-box-footer" href="/zakat-payments/list">Lihat Riwayat <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
@@ -151,18 +171,9 @@ ob_start();
                                     <th class="text-right" style="width: 260px">Nilai</th>
                                 </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="byTypeRows">
                                 <tr>
-                                    <td>Database</td>
-                                    <td class="text-right"><?= e($databaseName); ?></td>
-                                </tr>
-                                <tr>
-                                    <td>Host</td>
-                                    <td class="text-right"><?= e($databaseHost); ?></td>
-                                </tr>
-                                <tr>
-                                    <td>Role</td>
-                                    <td class="text-right"><?= e($currentRole); ?></td>
+                                    <td colspan="2" class="text-center text-muted">Memuat...</td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -174,9 +185,11 @@ ob_start();
                     <div class="card-header">
                         <h3 class="card-title">Pembayaran Terbaru (5)</h3>
                         <div class="card-tools">
-                            <a class="btn btn-sm btn-primary" href="/zakat-payments/new">
-                                <i class="fas fa-plus"></i> Input Pembayaran
-                            </a>
+                            <?php if (in_array((string) ($user['role'] ?? ''), ['ADMIN', 'OPERATOR'], true)): ?>
+                                <a class="btn btn-sm btn-primary" href="/zakat-payments/new">
+                                    <i class="fas fa-plus"></i> Input Pembayaran
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="card-body p-0">
@@ -192,7 +205,7 @@ ob_start();
                                     <th class="text-right" style="width: 140px">Beras</th>
                                 </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="recentRows">
                                 <tr>
                                     <td colspan="6" class="text-center text-muted">Memuat...</td>
                                 </tr>
@@ -212,9 +225,11 @@ ob_start();
                         <h3 class="card-title">Aksi Cepat</h3>
                     </div>
                     <div class="card-body">
-                        <a class="btn btn-primary btn-block mb-2" href="/zakat-payments/new">
-                            <i class="fas fa-plus"></i> Input Pembayaran
-                        </a>
+                        <?php if (in_array((string) ($user['role'] ?? ''), ['ADMIN', 'OPERATOR'], true)): ?>
+                            <a class="btn btn-primary btn-block mb-2" href="/zakat-payments/new">
+                                <i class="fas fa-plus"></i> Input Pembayaran
+                            </a>
+                        <?php endif; ?>
                         <a class="btn btn-outline-primary btn-block mb-2" href="/zakat-payments/list">
                             <i class="fas fa-list"></i> Riwayat Pembayaran
                         </a>
@@ -235,24 +250,22 @@ ob_start();
                         <h3 class="card-title">Info</h3>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <div class="font-weight-bold"><?= e((string) ($stats['appName'] ?? 'ZIS App')); ?></div>
-                            <div class="text-muted"><?= e($databaseHost); ?></div>
+                        <div id="instansiBox" class="d-none mb-3">
+                            <div class="font-weight-bold" id="instansiNama">-</div>
+                            <div class="text-muted" id="instansiAlamat">-</div>
                         </div>
 
                         <div class="mb-3">
-                            <div class="small text-muted">User</div>
-                            <div><?= e((string) ($user['username'] ?? $user['name'] ?? '-')); ?></div>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="small text-muted">Email</div>
-                            <div><?= e((string) ($user['email'] ?? '-')); ?></div>
+                            <div class="text-muted">Kwitansi</div>
+                            <div><span class="font-weight-bold" id="receiptLast">-</span></div>
+                            <div class="text-muted">Berikutnya: <span id="receiptNext">-</span></div>
                         </div>
 
                         <div>
-                            <div class="small text-muted">Role</div>
-                            <div><?= e($currentRole); ?></div>
+                            <div class="text-muted mb-1">Zakat Quality Aktif (Fitrah)</div>
+                            <ul class="pl-3 mb-0" id="qualityList">
+                                <li class="text-muted">Memuat...</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -261,28 +274,289 @@ ob_start();
     </div>
 </section>
 
-<style>
-    .dashboard-filter-actions {
-        display: flex;
-        align-items: flex-end;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        height: 100%;
-        padding-bottom: 1rem;
-    }
+<script>
+    window.addEventListener('load', function () {
+        (function () {
+            const $from = $("#filterFrom");
+            const $to = $("#filterTo");
+            const $btnApply = $("#btnApply");
+            const $btnReset = $("#btnReset");
+            const $btnToday = $("#btnToday");
+            const $btnThisWeek = $("#btnThisWeek");
+            const $btnThisMonth = $("#btnThisMonth");
 
-    .dashboard-filter-actions .btn,
-    .dashboard-filter-actions .btn-group {
-        margin-right: 0 !important;
-        margin-bottom: 0 !important;
-    }
+            const $valTotalUang = $("#valTotalUang");
+            const $valTotalBeras = $("#valTotalBeras");
+            const $valTotalTransaksi = $("#valTotalTransaksi");
+            const $valTotalJiwa = $("#valTotalJiwa");
+            const $valUangCash = $("#valUangCash");
+            const $valUangTransfer = $("#valUangTransfer");
 
-    @media (max-width: 767.98px) {
-        .dashboard-filter-actions {
-            padding-bottom: 0;
-        }
-    }
-</style>
+            const $byTypeRows = $("#byTypeRows");
+            const $recentRows = $("#recentRows");
+
+            const $instansiBox = $("#instansiBox");
+            const $instansiNama = $("#instansiNama");
+            const $instansiAlamat = $("#instansiAlamat");
+            const $receiptLast = $("#receiptLast");
+            const $receiptNext = $("#receiptNext");
+            const $qualityList = $("#qualityList");
+
+            function toLocalIsoDate(d = new Date()) {
+                const x = new Date(d);
+                const y = x.getFullYear();
+                const m = String(x.getMonth() + 1).padStart(2, "0");
+                const day = String(x.getDate()).padStart(2, "0");
+                return `${y}-${m}-${day}`;
+            }
+
+            function todayIso() {
+                return toLocalIsoDate(new Date());
+            }
+
+            function rupiah(v) {
+                if (v == null) return "-";
+                const n = Number(v);
+                return `Rp ${new Intl.NumberFormat("id-ID").format(n)}`;
+            }
+
+            function kg(v) {
+                if (v == null) return "-";
+                const n = Number(v);
+                return `${new Intl.NumberFormat("id-ID").format(n)} Kg`;
+            }
+
+            function formatDateId(iso) {
+                if (!iso) return "-";
+                const parts = String(iso).split("-");
+                if (parts.length !== 3) return iso;
+                const [yyyy, mm, dd] = parts;
+                return `${dd}/${mm}/${yyyy}`;
+            }
+
+            function formatDateMonthName(iso) {
+                if (!iso) return "-";
+                const d = new Date(iso);
+                if (Number.isNaN(d.getTime())) return iso;
+                return new Intl.DateTimeFormat("id-ID", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric"
+                }).format(d);
+            }
+
+            function escapeHtml(str) {
+                return String(str ?? "")
+                    .replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")
+                    .replaceAll("\"", "&quot;")
+                    .replaceAll("'", "&#039;");
+            }
+
+            function startOfWeekIso(d = new Date()) {
+                const x = new Date(d);
+                const day = x.getDay();
+                const diff = (day === 0 ? -6 : 1) - day;
+                x.setDate(x.getDate() + diff);
+                return toLocalIsoDate(x);
+            }
+
+            function startOfMonthIso(d = new Date()) {
+                const x = new Date(d);
+                x.setDate(1);
+                return toLocalIsoDate(x);
+            }
+
+            function syncQuickRangeButtons() {
+                const from = ($from.val() || "").trim();
+                const to = ($to.val() || "").trim();
+                const today = todayIso();
+                const weekStart = startOfWeekIso(new Date());
+                const monthStart = startOfMonthIso(new Date());
+
+                $btnToday.removeClass("active");
+                $btnThisWeek.removeClass("active");
+                $btnThisMonth.removeClass("active");
+
+                if (from === today && to === today) {
+                    $btnToday.addClass("active");
+                    return;
+                }
+                if (from === weekStart && to === today) {
+                    $btnThisWeek.addClass("active");
+                    return;
+                }
+                if (from === monthStart && to === today) {
+                    $btnThisMonth.addClass("active");
+                }
+            }
+
+            async function load() {
+                const from = $from.val();
+                const to = $to.val();
+                if (!from || !to) return;
+                syncQuickRangeButtons();
+
+                $byTypeRows.empty().append('<tr><td colspan="2" class="text-center text-muted">Memuat...</td></tr>');
+                $recentRows.empty().append('<tr><td colspan="6" class="text-center text-muted">Memuat...</td></tr>');
+                $qualityList.empty().append('<li class="text-muted">Memuat...</li>');
+
+                const res = await fetch(`/api/dashboard/summary?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, {
+                    headers: {"Accept": "application/json"}
+                });
+                if (!res.ok) {
+                    const t = await res.text();
+                    alert(t || `Gagal load (${res.status})`);
+                    return;
+                }
+
+                const data = await res.json();
+
+                $valTotalUang.text(rupiah(data.totalUangMasuk));
+                $valTotalBeras.text(kg(data.totalBerasKg));
+                $valTotalTransaksi.text(new Intl.NumberFormat("id-ID").format(Number(data.totalTransaksi ?? 0)));
+                $valTotalJiwa.text(new Intl.NumberFormat("id-ID").format(Number(data.totalJiwaFitrah ?? 0)));
+                $valUangCash.text(rupiah(data.totalUangCash ?? 0));
+                $valUangTransfer.text(rupiah(data.totalUangTransfer ?? 0));
+
+                const byType = Array.isArray(data.byType) ? data.byType : [];
+                const map = new Map();
+                for (const r of byType) {
+                    const key = r.zakatType || (r.zakatTypeLabel ? String(r.zakatTypeLabel) : null);
+                    if (key) map.set(String(key), r);
+                }
+
+                const ALL_TYPES = [
+                    "ZAKAT_FITRAH_BERAS",
+                    "ZAKAT_FITRAH_UANG",
+                    "FIDIAH",
+                    "ZAKAT_MAL",
+                    "INFAQ_SEDEKAH"
+                ];
+                const TYPE_LABELS = {
+                    ZAKAT_FITRAH_BERAS: "Total Zakat Fitrah (Beras)",
+                    ZAKAT_FITRAH_UANG: "Total Zakat Fitrah (Uang)",
+                    FIDIAH: "Total Fidiah",
+                    ZAKAT_MAL: "Total Zakat Mal",
+                    INFAQ_SEDEKAH: "Total Infaq/Sedekah"
+                };
+
+                $byTypeRows.empty();
+                for (const t of ALL_TYPES) {
+                    const r = map.get(t);
+                    const label = TYPE_LABELS[t] || (r && (r.zakatTypeLabel || r.zakatType) ? (r.zakatTypeLabel || r.zakatType) : t);
+                    const isBerasType = t === "ZAKAT_FITRAH_BERAS";
+                    const value = isBerasType
+                        ? kg(r ? (r.totalBerasKg ?? 0) : 0)
+                        : rupiah(r ? (r.totalUang ?? 0) : 0);
+                    $byTypeRows.append(
+                        '<tr><td>' + escapeHtml(label) + '</td><td class="text-right">' + value + '</td></tr>'
+                    );
+                }
+
+                const recent = Array.isArray(data.recentPayments) ? data.recentPayments : [];
+                $recentRows.empty();
+                if (!recent.length) {
+                    $recentRows.append('<tr><td colspan="6" class="text-center text-muted">Tidak ada data</td></tr>');
+                } else {
+                    for (const p of recent) {
+                        const tanggal = formatDateMonthName(p.paymentAt);
+                        const label = p.zakatTypeLabel || p.zakatType || "-";
+                        let nominalText = "-";
+                        let berasText = "-";
+                        const jiwa = Number(p.jumlahJiwa ?? 0);
+                        const isFitrah = p.zakatType === "ZAKAT_FITRAH_BERAS" || p.zakatType === "ZAKAT_FITRAH_UANG";
+                        if (p.jumlahUang != null) {
+                            const n = Number(p.jumlahUang);
+                            const perJiwa = isFitrah && jiwa > 0 ? n / jiwa : n;
+                            nominalText = rupiah(perJiwa);
+                        }
+                        if (p.beratBerasKg != null) {
+                            const n = Number(p.beratBerasKg);
+                            const perJiwa = isFitrah && jiwa > 0 ? n / jiwa : n;
+                            berasText = kg(perJiwa);
+                        }
+                        const alamat = (p.alamat ?? "").toString();
+                        const alamatShort = alamat.length > 50 ? (alamat.slice(0, 50) + "...") : alamat;
+                        $recentRows.append(
+                            '<tr>' +
+                                '<td>' + escapeHtml(formatDateId(tanggal)) + '</td>' +
+                                '<td>' + escapeHtml(p.receiptNumber || "-") + '</td>' +
+                                '<td title="' + escapeHtml(alamat) + '">' + escapeHtml(alamatShort) + '</td>' +
+                                '<td>' + escapeHtml(label) + '</td>' +
+                                '<td class="text-right">' + nominalText + '</td>' +
+                                '<td class="text-right">' + berasText + '</td>' +
+                            '</tr>'
+                        );
+                    }
+                }
+
+                const prof = data.institutionProfile;
+                if (prof) {
+                    $instansiBox.removeClass("d-none");
+                    $instansiNama.text(prof.namaInstansi || "-");
+                    const alamat = prof.alamatLengkap || "-";
+                    const kota = prof.kotaKabupaten ? `, ${prof.kotaKabupaten}` : "";
+                    $instansiAlamat.text(`${alamat}${kota}`);
+                } else {
+                    $instansiBox.addClass("d-none");
+                }
+
+                const ri = data.receiptInfo;
+                $receiptLast.text((ri && ri.lastReceiptNumber) ? ri.lastReceiptNumber : "-");
+                $receiptNext.text((ri && ri.nextReceiptNumber) ? ri.nextReceiptNumber : "-");
+
+                const qualities = Array.isArray(data.activeQualities) ? data.activeQualities : [];
+                $qualityList.empty();
+                if (!qualities.length) {
+                    $qualityList.append('<li class="text-muted">-</li>');
+                } else {
+                    for (const q of qualities) {
+                        const label = q.zakatTypeLabel || q.zakatType || "-";
+                        $qualityList.append('<li>' + escapeHtml(label) + ': <strong>' + new Intl.NumberFormat("id-ID").format(Number(q.activeCount ?? 0)) + '</strong></li>');
+                    }
+                }
+            }
+
+            $btnApply.on("click", load);
+            $btnReset.on("click", function () {
+                const iso = todayIso();
+                $from.val(iso);
+                $to.val(iso);
+                load();
+            });
+            $btnToday.on("click", function () {
+                const iso = todayIso();
+                $from.val(iso);
+                $to.val(iso);
+                load();
+            });
+            $btnThisWeek.on("click", function () {
+                const end = todayIso();
+                const start = startOfWeekIso(new Date());
+                $from.val(start);
+                $to.val(end);
+                load();
+            });
+            $btnThisMonth.on("click", function () {
+                const end = todayIso();
+                const start = startOfMonthIso(new Date());
+                $from.val(start);
+                $to.val(end);
+                load();
+            });
+            $from.on("change", syncQuickRangeButtons);
+            $to.on("change", syncQuickRangeButtons);
+
+            const iso = todayIso();
+            $from.val(startOfMonthIso(new Date()));
+            $to.val(iso);
+            syncQuickRangeButtons();
+            load();
+        })();
+    });
+</script>
 <?php
 $content = ob_get_clean();
 require base_path('app/Views/layouts/admin.php');

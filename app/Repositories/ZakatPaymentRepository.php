@@ -487,6 +487,150 @@ final class ZakatPaymentRepository
         }
     }
 
+    public function dashboardTotals(string $fromInclusive, string $toExclusive): array
+    {
+        try {
+            $statement = Database::connection()->prepare(
+                "SELECT
+                    COUNT(*) AS total_transaksi,
+                    COALESCE(SUM(
+                        COALESCE(p.jumlah_uang, 0)
+                        + COALESCE(p.jumlah_uang_zakat_mal, 0)
+                        + COALESCE(p.jumlah_uang_infaq_sedekah, 0)
+                        + COALESCE(p.jumlah_uang_fidiah, 0)
+                    ), 0) AS total_uang_masuk,
+                    COALESCE(SUM(COALESCE(p.berat_beras_kg, 0)), 0) AS total_beras_kg,
+                    COALESCE(SUM(CASE
+                        WHEN q.zakat_type IN ('ZAKAT_FITRAH_BERAS', 'ZAKAT_FITRAH_UANG') THEN COALESCE(p.jumlah_jiwa, 0)
+                        ELSE 0
+                    END), 0) AS total_jiwa_fitrah
+                 FROM zakat_payment p
+                 LEFT JOIN zakat_quality q ON q.id = p.zakat_quality_id
+                 WHERE p.payment_at >= :from_inclusive
+                   AND p.payment_at < :to_exclusive
+                   AND p.canceled = 0"
+            );
+            $statement->execute([
+                'from_inclusive' => $fromInclusive,
+                'to_exclusive' => $toExclusive,
+            ]);
+
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+            return is_array($row) ? $row : [];
+        } catch (PDOException $exception) {
+            throw new RuntimeException(
+                'Gagal menghitung total dashboard.',
+                (int) $exception->getCode(),
+                $exception
+            );
+        }
+    }
+
+    public function dashboardPaymentMethodBreakdown(string $fromInclusive, string $toExclusive): array
+    {
+        try {
+            $statement = Database::connection()->prepare(
+                "SELECT
+                    COALESCE(SUM(CASE
+                        WHEN p.payment_method = 'CASH' THEN
+                            COALESCE(p.jumlah_uang, 0)
+                            + COALESCE(p.jumlah_uang_zakat_mal, 0)
+                            + COALESCE(p.jumlah_uang_infaq_sedekah, 0)
+                            + COALESCE(p.jumlah_uang_fidiah, 0)
+                        ELSE 0
+                    END), 0) AS total_uang_cash,
+                    COALESCE(SUM(CASE
+                        WHEN p.payment_method = 'TRANSFER' THEN
+                            COALESCE(p.jumlah_uang, 0)
+                            + COALESCE(p.jumlah_uang_zakat_mal, 0)
+                            + COALESCE(p.jumlah_uang_infaq_sedekah, 0)
+                            + COALESCE(p.jumlah_uang_fidiah, 0)
+                        ELSE 0
+                    END), 0) AS total_uang_transfer
+                 FROM zakat_payment p
+                 WHERE p.payment_at >= :from_inclusive
+                   AND p.payment_at < :to_exclusive
+                   AND p.canceled = 0"
+            );
+            $statement->execute([
+                'from_inclusive' => $fromInclusive,
+                'to_exclusive' => $toExclusive,
+            ]);
+
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+            return is_array($row) ? $row : [];
+        } catch (PDOException $exception) {
+            throw new RuntimeException(
+                'Gagal menghitung breakdown metode pembayaran.',
+                (int) $exception->getCode(),
+                $exception
+            );
+        }
+    }
+
+    public function findRecent(string $fromInclusive, string $toExclusive, int $limit = 5): array
+    {
+        try {
+            $statement = Database::connection()->prepare(
+                "SELECT
+                    p.id,
+                    p.receipt_number,
+                    p.payment_at,
+                    p.alamat,
+                    p.jumlah_jiwa,
+                    p.jumlah_uang,
+                    p.berat_beras_kg,
+                    p.jumlah_uang_zakat_mal,
+                    p.jumlah_uang_infaq_sedekah,
+                    p.jumlah_uang_fidiah,
+                    q.zakat_type AS quality_zakat_type
+                 FROM zakat_payment p
+                 LEFT JOIN zakat_quality q ON q.id = p.zakat_quality_id
+                 WHERE p.payment_at >= :from_inclusive
+                   AND p.payment_at < :to_exclusive
+                   AND p.canceled = 0
+                 ORDER BY p.payment_at DESC, p.receipt_year DESC, p.receipt_sequence DESC, p.id DESC
+                 LIMIT :limit"
+            );
+            $statement->bindValue(':from_inclusive', $fromInclusive);
+            $statement->bindValue(':to_exclusive', $toExclusive);
+            $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $statement->execute();
+
+            return $statement->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $exception) {
+            throw new RuntimeException(
+                'Gagal memuat pembayaran terbaru.',
+                (int) $exception->getCode(),
+                $exception
+            );
+        }
+    }
+
+    public function maxReceiptSequenceForYearPublic(int $year): int
+    {
+        return $this->maxReceiptSequenceForYear(Database::connection(), $year);
+    }
+
+    public function lastIssuedReceiptSequence(int $year): int
+    {
+        try {
+            $statement = Database::connection()->prepare(
+                'SELECT last_issued FROM receipt_sequence WHERE receipt_year = :receipt_year LIMIT 1'
+            );
+            $statement->execute(['receipt_year' => $year]);
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+            return is_array($row) ? (int) ($row['last_issued'] ?? 0) : 0;
+        } catch (PDOException $exception) {
+            throw new RuntimeException(
+                'Gagal membaca sequence kwitansi.',
+                (int) $exception->getCode(),
+                $exception
+            );
+        }
+    }
+
     private function lockReceiptSequence(PDO $connection, int $year): int
     {
         $statement = $connection->prepare(

@@ -99,4 +99,22 @@ final class ZakatQualityRepository
             );
         }
     }
+
+    public function countActiveByType(string $zakatType): int
+    {
+        try {
+            $statement = Database::connection()->prepare(
+                'SELECT COUNT(*) FROM zakat_quality WHERE zakat_type = :zakat_type AND active = 1'
+            );
+            $statement->execute(['zakat_type' => $zakatType]);
+
+            return (int) $statement->fetchColumn();
+        } catch (PDOException $exception) {
+            throw new RuntimeException(
+                'Hitung zakat quality aktif gagal.',
+                (int) $exception->getCode(),
+                $exception
+            );
+        }
+    }
 }
