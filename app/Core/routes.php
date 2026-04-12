@@ -25,6 +25,8 @@ return static function (Router $router): void {
     $router->get('/api/public/dashboard/summary', [PublicDashboardController::class, 'summaryApi']);
     $router->get('/login', [AuthController::class, 'showLogin'], ['guest' => true]);
     $router->post('/login', [AuthController::class, 'login'], ['guest' => true]);
+    $router->get('/update-password', [AuthController::class, 'showUpdatePassword'], ['auth' => true]);
+    $router->post('/update-password', [AuthController::class, 'updatePassword'], ['auth' => true]);
     $router->get('/dashboard', [DashboardController::class, 'index'], ['auth' => true]);
     $router->get('/api/dashboard/summary', [DashboardController::class, 'summaryApi'], ['auth' => true]);
     $router->get('/zakat-payments/new', [ZakatPaymentController::class, 'createForm'], [

@@ -43,6 +43,7 @@
                             <form id="logout-form" method="post" action="/logout" style="display:none;">
                                 <input type="hidden" name="_csrf" value="<?= e((string) ($csrfToken ?? '')); ?>">
                             </form>
+                            <a class="btn btn-default btn-flat" href="/update-password">Update Password</a>
                             <a class="btn btn-default btn-flat float-right" href="/logout" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Sign out</a>
                         </li>
                     </ul>

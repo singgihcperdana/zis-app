@@ -60,6 +60,21 @@ final class AuthService
         Session::invalidate();
     }
 
+    public function changePassword(string $userId, string $currentPassword, string $newPassword): void
+    {
+        $user = $this->users->findById($userId);
+
+        if (!is_array($user)) {
+            throw new RuntimeException('User tidak ditemukan.');
+        }
+
+        if (!Password::verify($currentPassword, (string) $user['password'])) {
+            throw new RuntimeException('Password lama tidak sesuai.');
+        }
+
+        $this->users->updatePassword($userId, Password::hash($newPassword));
+    }
+
     private function login(array $user): void
     {
         Session::regenerate();

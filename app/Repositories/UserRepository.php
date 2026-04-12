@@ -210,4 +210,23 @@ final class UserRepository
             );
         }
     }
+
+    public function updatePassword(string $id, string $hashedPassword): void
+    {
+        try {
+            $statement = Database::connection()->prepare(
+                'UPDATE users SET password = :password WHERE id = :id'
+            );
+            $statement->execute([
+                'id' => $id,
+                'password' => $hashedPassword,
+            ]);
+        } catch (PDOException $exception) {
+            throw new RuntimeException(
+                'Update password user gagal.',
+                (int) $exception->getCode(),
+                $exception
+            );
+        }
+    }
 }
