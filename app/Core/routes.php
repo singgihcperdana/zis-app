@@ -49,6 +49,33 @@ return static function (Router $router): void {
     $router->get('/qurban/list', [QurbanController::class, 'listPage'], [
         'auth' => true,
     ]);
+    $router->get('/qurban-distributions/new', [QurbanController::class, 'distributionCreateForm'], [
+        'auth' => true,
+    ]);
+    $router->get('/qurban-distributions/{id}/edit', [QurbanController::class, 'distributionEditForm'], [
+        'auth' => true,
+    ]);
+    $router->get('/qurban-distributions/list', [QurbanController::class, 'distributionListPage'], [
+        'auth' => true,
+    ]);
+    $router->post('/api/qurban-distributions', [QurbanController::class, 'distributionCreateApi'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/qurban-distributions', [QurbanController::class, 'distributionListApi'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/qurban-distributions/{id}', [QurbanController::class, 'distributionShowApi'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/qurban-distributions.csv', [QurbanController::class, 'distributionCsv'], [
+        'auth' => true,
+    ]);
+    $router->put('/api/qurban-distributions/{id}', [QurbanController::class, 'distributionUpdateApi'], [
+        'auth' => true,
+    ]);
+    $router->delete('/api/qurban-distributions/{id}', [QurbanController::class, 'distributionDeleteApi'], [
+        'auth' => true,
+    ]);
     $router->post('/api/qurban', [QurbanController::class, 'createApi'], [
         'auth' => true,
     ]);

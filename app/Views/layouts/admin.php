@@ -121,6 +121,18 @@
                                         <p>Riwayat Qurban</p>
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/qurban-distributions/new" data-nav-prefix="/qurban-distributions/new">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Input Penyaluran</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/qurban-distributions/list" data-nav-prefix="/qurban-distributions/list">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Riwayat Penyaluran</p>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
 
