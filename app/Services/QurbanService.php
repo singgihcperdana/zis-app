@@ -47,6 +47,7 @@ final class QurbanService
             'payerPhone' => $row['payer_phone'] !== null ? (string) $row['payer_phone'] : null,
             'alamat' => $row['alamat'] !== null ? (string) $row['alamat'] : null,
             'animalType' => $row['animal_type'] !== null ? (string) $row['animal_type'] : null,
+            'animalNumberGroup' => $row['animal_number_group'] !== null ? (string) $row['animal_number_group'] : null,
             'biayaPemeliharaan' => $row['biaya_pemeliharaan'] !== null ? (float) $row['biaya_pemeliharaan'] : null,
             'shodaqohInfak' => $row['shodaqoh_infak'] !== null ? (float) $row['shodaqoh_infak'] : null,
             'biayaSupplier' => $row['biaya_supplier'] !== null ? (float) $row['biaya_supplier'] : null,
@@ -203,10 +204,6 @@ final class QurbanService
             throw new RuntimeException('Nomor qurban wajib diisi');
         }
 
-        if ($this->qurban->existsByQurbanNumber($qurbanNumber, $excludeId)) {
-            throw new RuntimeException('Nomor qurban sudah dipakai');
-        }
-
         if ($payerName === '') {
             throw new RuntimeException('Nama wajib diisi');
         }
@@ -221,6 +218,13 @@ final class QurbanService
 
         if (!in_array($animalType, self::ANIMAL_TYPES, true)) {
             throw new RuntimeException('Jenis hewan qurban tidak valid');
+        }
+
+        $animalNumberGroup = $this->animalNumberGroup($animalType);
+
+        if ($this->qurban->existsByQurbanNumber($qurbanNumber, $animalNumberGroup, $excludeId)) {
+            $groupLabel = $animalNumberGroup === 'KAMBING' ? 'kambing' : 'sapi';
+            throw new RuntimeException('Nomor qurban sudah dipakai untuk kelompok ' . $groupLabel);
         }
 
         if (!in_array($slaughterMode, self::SLAUGHTER_MODES, true)) {
@@ -264,6 +268,7 @@ final class QurbanService
             'payer_phone' => $payerPhone,
             'alamat' => $alamat,
             'animal_type' => $animalType,
+            'animal_number_group' => $animalNumberGroup,
             'biaya_pemeliharaan' => $biayaPemeliharaan,
             'shodaqoh_infak' => $shodaqohInfak,
             'biaya_supplier' => $biayaSupplier,
@@ -273,5 +278,10 @@ final class QurbanService
             'created_by' => $this->normalizeOptionalText($actor),
             'updated_by' => $this->normalizeOptionalText($actor),
         ], $participants];
+    }
+
+    private function animalNumberGroup(string $animalType): string
+    {
+        return $animalType === 'KAMBING' ? 'KAMBING' : 'SAPI';
     }
 }

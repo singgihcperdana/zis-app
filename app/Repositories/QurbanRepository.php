@@ -17,11 +17,14 @@ final class QurbanRepository
         'animalType' => 'q.animal_type',
     ];
 
-    public function existsByQurbanNumber(string $qurbanNumber, ?string $excludeId = null): bool
+    public function existsByQurbanNumber(string $qurbanNumber, string $animalNumberGroup, ?string $excludeId = null): bool
     {
         try {
-            $sql = 'SELECT COUNT(*) FROM qurban_submission WHERE qurban_number = :qurban_number';
-            $params = ['qurban_number' => $qurbanNumber];
+            $sql = 'SELECT COUNT(*) FROM qurban_submission WHERE qurban_number = :qurban_number AND animal_number_group = :animal_number_group';
+            $params = [
+                'qurban_number' => $qurbanNumber,
+                'animal_number_group' => $animalNumberGroup,
+            ];
 
             if (is_string($excludeId) && trim($excludeId) !== '') {
                 $sql .= ' AND id <> :exclude_id';
@@ -49,6 +52,7 @@ final class QurbanRepository
                     q.payer_phone,
                     q.alamat,
                     q.animal_type,
+                    q.animal_number_group,
                     q.biaya_pemeliharaan,
                     q.shodaqoh_infak,
                     q.biaya_supplier,
@@ -95,6 +99,7 @@ final class QurbanRepository
                     payer_phone,
                     alamat,
                     animal_type,
+                    animal_number_group,
                     biaya_pemeliharaan,
                     shodaqoh_infak,
                     biaya_supplier,
@@ -111,6 +116,7 @@ final class QurbanRepository
                     :payer_phone,
                     :alamat,
                     :animal_type,
+                    :animal_number_group,
                     :biaya_pemeliharaan,
                     :shodaqoh_infak,
                     :biaya_supplier,
@@ -130,6 +136,7 @@ final class QurbanRepository
                 'payer_phone' => $submission['payer_phone'],
                 'alamat' => $submission['alamat'],
                 'animal_type' => $submission['animal_type'],
+                'animal_number_group' => $submission['animal_number_group'],
                 'biaya_pemeliharaan' => $submission['biaya_pemeliharaan'],
                 'shodaqoh_infak' => $submission['shodaqoh_infak'],
                 'biaya_supplier' => $submission['biaya_supplier'],
@@ -207,6 +214,7 @@ final class QurbanRepository
                     q.payer_phone,
                     q.alamat,
                     q.animal_type,
+                    q.animal_number_group,
                     q.biaya_pemeliharaan,
                     q.shodaqoh_infak,
                     q.biaya_supplier,
@@ -247,6 +255,7 @@ final class QurbanRepository
                     'payerPhone' => $row['payer_phone'] !== null ? (string) $row['payer_phone'] : null,
                     'alamat' => $row['alamat'] !== null ? (string) $row['alamat'] : null,
                     'animalType' => $row['animal_type'] !== null ? (string) $row['animal_type'] : null,
+                    'animalNumberGroup' => $row['animal_number_group'] !== null ? (string) $row['animal_number_group'] : null,
                     'biayaPemeliharaan' => $row['biaya_pemeliharaan'] !== null ? (float) $row['biaya_pemeliharaan'] : null,
                     'shodaqohInfak' => $row['shodaqoh_infak'] !== null ? (float) $row['shodaqoh_infak'] : null,
                     'biayaSupplier' => $row['biaya_supplier'] !== null ? (float) $row['biaya_supplier'] : null,
@@ -288,10 +297,11 @@ final class QurbanRepository
                  SET qurban_number = :qurban_number,
                      submission_date = :submission_date,
                      payer_name = :payer_name,
-                     payer_phone = :payer_phone,
-                     alamat = :alamat,
-                     animal_type = :animal_type,
-                     biaya_pemeliharaan = :biaya_pemeliharaan,
+                    payer_phone = :payer_phone,
+                    alamat = :alamat,
+                    animal_type = :animal_type,
+                    animal_number_group = :animal_number_group,
+                    biaya_pemeliharaan = :biaya_pemeliharaan,
                      shodaqoh_infak = :shodaqoh_infak,
                      biaya_supplier = :biaya_supplier,
                      slaughter_mode = :slaughter_mode,
@@ -309,6 +319,7 @@ final class QurbanRepository
                 'payer_phone' => $submission['payer_phone'],
                 'alamat' => $submission['alamat'],
                 'animal_type' => $submission['animal_type'],
+                'animal_number_group' => $submission['animal_number_group'],
                 'biaya_pemeliharaan' => $submission['biaya_pemeliharaan'],
                 'shodaqoh_infak' => $submission['shodaqoh_infak'],
                 'biaya_supplier' => $submission['biaya_supplier'],
