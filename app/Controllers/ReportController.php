@@ -259,4 +259,21 @@ HTML;
             ], 404);
         }
     }
+
+    public function qurbanSapiTemplatePdf(string $qurbanId): void
+    {
+        try {
+            $bytes = $this->reports->qurbanSapiTemplatePdf($qurbanId);
+            http_response_code(200);
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment; filename="kwitansi-qurban-' . rawurlencode($qurbanId) . '.pdf"');
+            echo $bytes;
+            exit;
+        } catch (RuntimeException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], 404);
+        }
+    }
 }

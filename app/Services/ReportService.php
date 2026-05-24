@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Repositories\InstitutionProfileRepository;
 use App\Repositories\MuzakkiPersonRepository;
+use App\Repositories\QurbanRepository;
 use App\Repositories\ZakatPaymentRepository;
 use DateTimeImmutable;
 use RuntimeException;
@@ -44,18 +45,43 @@ final class ReportService
         'checkboxTransfer' => [500.28854, 252.74867, 512.2886, 268.34314],
     ];
 
+    private const QURBAN_SAPI_FIELD_RECTS = [
+        'nama' => [162.0, 777.0, 397.0, 791.0],
+        'peserta1' => [421.0, 774.0, 580.0, 788.0],
+        'alamat' => [162.0, 760.0, 397.0, 774.0],
+        'peserta2' => [421.0, 752.0, 580.0, 766.0],
+        'telp' => [162.0, 743.0, 397.0, 757.0],
+        'peserta3' => [421.0, 729.0, 580.0, 743.0],
+        'peserta4' => [421.0, 707.0, 580.0, 721.0],
+        'peserta5' => [422.0, 684.0, 581.0, 698.0],
+        'biayaSapi' => [190.0, 660.0, 291.0, 674.0],
+        'peserta6' => [422.0, 661.0, 581.0, 675.0],
+        'infak' => [190.0, 643.0, 291.0, 657.0],
+        'peserta7' => [422.0, 639.0, 581.0, 653.0],
+        'biayaSupplier' => [190.0, 626.0, 291.0, 640.0],
+        'isSembelihJagal' => [164.0, 599.0, 177.0, 612.0],
+        'isSembelihSendiri' => [307.0, 599.0, 321.0, 613.0],
+        'tanggal' => [489.0, 583.0, 514.0, 604.0],
+        'bulan' => [525.0, 584.0, 550.0, 605.0],
+        'tahun' => [563.0, 583.0, 600.0, 604.0],
+        'nomorKurban' => [73.0, 506.0, 162.0, 567.0],
+    ];
+
     private ZakatPaymentRepository $payments;
     private MuzakkiPersonRepository $muzakki;
     private InstitutionProfileRepository $profiles;
+    private QurbanRepository $qurban;
 
     public function __construct(
         ?ZakatPaymentRepository $payments = null,
         ?MuzakkiPersonRepository $muzakki = null,
-        ?InstitutionProfileRepository $profiles = null
+        ?InstitutionProfileRepository $profiles = null,
+        ?QurbanRepository $qurban = null
     ) {
         $this->payments = $payments ?? new ZakatPaymentRepository();
         $this->muzakki = $muzakki ?? new MuzakkiPersonRepository();
         $this->profiles = $profiles ?? new InstitutionProfileRepository();
+        $this->qurban = $qurban ?? new QurbanRepository();
     }
 
     public function rekapZis(string $fromDate, string $toDate): array
@@ -340,10 +366,67 @@ final class ReportService
             'checkboxTransfer' => (string) ($payment['payment_method'] ?? '') === 'TRANSFER',
         ];
 
-        return $this->renderPdfTemplate($templatePath, $fields, $checkboxes);
+        return $this->renderPdfTemplate($templatePath, $fields, $checkboxes, self::PDF_FIELD_RECTS);
     }
 
-    private function renderPdfTemplate(string $templatePath, array $fields, array $checkboxes): string
+    public function qurbanSapiTemplatePdf(string $qurbanId): string
+    {
+        $qurban = $this->qurban->findById(trim($qurbanId));
+        if (!is_array($qurban)) {
+            throw new RuntimeException('Data qurban tidak ditemukan');
+        }
+
+        $animalType = (string) ($qurban['animal_type'] ?? '');
+        if (!in_array($animalType, ['SAPI', 'SAPI_KOLEKTIF'], true)) {
+            throw new RuntimeException('Template kwitansi qurban baru tersedia untuk sapi.');
+        }
+
+        $templatePath = base_path('assets/pdf/form_qurban_sapi.pdf.pdf');
+        if (!is_file($templatePath)) {
+            throw new RuntimeException('Template PDF form_qurban_sapi.pdf.pdf tidak ditemukan');
+        }
+
+        $submissionDate = (string) ($qurban['submission_date'] ?? '');
+        $tanggal = '';
+        $bulan = '';
+        $tahun = '';
+        if ($submissionDate !== '' && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $submissionDate, $matches) === 1) {
+            $tahun = $matches[1];
+            $bulan = $matches[2];
+            $tanggal = $matches[3];
+        }
+
+        $participants = is_array($qurban['participants'] ?? null) ? array_values($qurban['participants']) : [];
+        if ($animalType === 'SAPI' && $participants === []) {
+            $participants[] = (string) ($qurban['payer_name'] ?? '');
+        }
+
+        $fields = [
+            'nama' => $this->safe((string) ($qurban['payer_name'] ?? '')),
+            'alamat' => $this->safe((string) ($qurban['alamat'] ?? '')),
+            'telp' => $this->safe((string) ($qurban['payer_phone'] ?? '')),
+            'biayaSapi' => $this->formatCurrency($qurban['biaya_pemeliharaan'] ?? null),
+            'infak' => $this->formatCurrency($qurban['shodaqoh_infak'] ?? null),
+            'biayaSupplier' => $this->formatCurrency($qurban['biaya_supplier'] ?? null),
+            'tanggal' => $tanggal,
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'nomorKurban' => $this->safe((string) ($qurban['qurban_number'] ?? '')),
+        ];
+
+        for ($i = 1; $i <= 7; $i++) {
+            $fields['peserta' . $i] = isset($participants[$i - 1]) ? $this->safe((string) $participants[$i - 1]) : '';
+        }
+
+        $checkboxes = [
+            'isSembelihJagal' => (string) ($qurban['slaughter_mode'] ?? '') === 'JAGAL',
+            'isSembelihSendiri' => (string) ($qurban['slaughter_mode'] ?? '') === 'SENDIRI',
+        ];
+
+        return $this->renderPdfTemplate($templatePath, $fields, $checkboxes, self::QURBAN_SAPI_FIELD_RECTS);
+    }
+
+    private function renderPdfTemplate(string $templatePath, array $fields, array $checkboxes, array $fieldRects): string
     {
         $pdf = new Fpdi('P', 'pt');
         $pageCount = $pdf->setSourceFile($templatePath);
@@ -358,34 +441,58 @@ final class ReportService
         $pdf->AddPage($orientation, [$size['width'], $size['height']]);
         $pdf->useTemplate($templateId, 0, 0, $size['width'], $size['height']);
 
-        $this->drawPdfFields($pdf, $size['height'], $fields, $checkboxes);
+        $this->drawPdfFields($pdf, $size['height'], $fields, $checkboxes, $fieldRects);
 
         return $pdf->Output('S');
     }
 
-    private function drawPdfFields(Fpdi $pdf, float $pageHeight, array $fields, array $checkboxes): void
+    private function drawPdfFields(Fpdi $pdf, float $pageHeight, array $fields, array $checkboxes, array $fieldRects): void
     {
+        $isQurbanSapiTemplate = $fieldRects === self::QURBAN_SAPI_FIELD_RECTS;
+
         foreach ($fields as $name => $value) {
-            if (!isset(self::PDF_FIELD_RECTS[$name])) {
+            if (!isset($fieldRects[$name])) {
                 continue;
             }
 
-            [$x1, $y1, $x2, $y2] = self::PDF_FIELD_RECTS[$name];
-            $fontSize = $name === 'noKwitansi' ? 10 : 9;
-            $baseline = $pageHeight - $y2 + ($fontSize + 2);
+            [$x1, $y1, $x2, $y2] = $fieldRects[$name];
+            $fontSize = match (true) {
+                $isQurbanSapiTemplate && $name === 'nomorKurban' => 76,
+                $isQurbanSapiTemplate => 11,
+                $name === 'noKwitansi' => 10,
+                default => 9,
+            };
 
-            $pdf->SetFont('Times', '', $fontSize);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->SetXY($x1 + 1, $baseline - $fontSize);
-            $pdf->Cell(max(0, $x2 - $x1 - 2), $fontSize + 2, $this->encodePdfText((string) $value), 0, 0, 'L');
+            $rectTop = $pageHeight - $y2;
+            $rectHeight = max(0, $y2 - $y1);
+            $textY = $rectTop + max(0, ($rectHeight - $fontSize) / 2);
+
+            $fontFamily = $name === 'nomorKurban' ? 'Helvetica' : 'Times';
+            $fontStyle = $name === 'nomorKurban' ? 'B' : '';
+            $align = match (true) {
+                $name === 'nomorKurban' => 'C',
+                in_array($name, ['biayaSapi', 'infak', 'biayaSupplier'], true) => 'R',
+                default => 'L',
+            };
+
+            $pdf->SetFont($fontFamily, $fontStyle, $fontSize);
+            if ($isQurbanSapiTemplate && $name === 'nomorKurban') {
+                $pdf->SetTextColor(255, 255, 255);
+            } else {
+                $pdf->SetTextColor(0, 0, 0);
+            }
+
+            $paddingX = $name === 'nomorKurban' ? 0 : 1;
+            $pdf->SetXY($x1 + $paddingX, $textY);
+            $pdf->Cell(max(0, $x2 - $x1 - 2), $fontSize + 2, $this->encodePdfText((string) $value), 0, 0, $align);
         }
 
         foreach ($checkboxes as $name => $checked) {
-            if (!$checked || !isset(self::PDF_FIELD_RECTS[$name])) {
+            if (!$checked || !isset($fieldRects[$name])) {
                 continue;
             }
 
-            [$x1, $y1, $x2, $y2] = self::PDF_FIELD_RECTS[$name];
+            [$x1, $y1, $x2, $y2] = $fieldRects[$name];
             $fontSize = 12;
             $baseline = $pageHeight - $y2 + ($fontSize + 1);
 
@@ -492,4 +599,5 @@ final class ReportService
 
         return $converted === false ? $trimmed : $converted;
     }
+
 }

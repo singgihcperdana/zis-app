@@ -130,6 +130,11 @@ ob_start();
                         </div>
                     </div>
                 </div>
+
+                <div class="form-group mt-3 mb-0">
+                    <label for="notes">Catatan</label>
+                    <textarea class="form-control" id="notes" placeholder="Catatan tambahan untuk data qurban ini" rows="2"></textarea>
+                </div>
             </div>
         </div>
 
@@ -176,6 +181,7 @@ ob_start();
             const $slaughterMode = $('#slaughterMode');
             const $pickupTimeNotes = $('#pickupTimeNotes');
             const $committeePhone = $('#committeePhone');
+            const $notes = $('#notes');
             const $btnReset = $('#btnReset');
             const $btnSave = $('#btnSave');
 
@@ -288,6 +294,7 @@ ob_start();
                     slaughterMode: ($slaughterMode.val() || '').trim(),
                     pickupTimeNotes: ($pickupTimeNotes.val() || '').trim(),
                     committeePhone: ($committeePhone.val() || '').trim(),
+                    notes: ($notes.val() || '').trim(),
                     participants: collectParticipants()
                 };
             }
@@ -316,6 +323,7 @@ ob_start();
                 $slaughterMode.val(data.slaughterMode || 'JAGAL');
                 $pickupTimeNotes.val(data.pickupTimeNotes || '');
                 $committeePhone.val(data.committeePhone || '');
+                $notes.val(data.notes || '');
 
                 participantInputs().forEach(function (input, index) {
                     input.value = Array.isArray(data.participants) ? (data.participants[index] || '') : '';

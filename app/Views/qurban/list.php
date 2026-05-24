@@ -89,13 +89,14 @@ ob_start();
                         <th>Sembelih</th>
                         <th>Pengambilan</th>
                         <th>No. HP Panitia</th>
+                        <th>Catatan</th>
                         <th>Peserta</th>
                         <th>Aksi</th>
                     </tr>
                     </thead>
                     <tbody id="qurbanRows">
                     <tr>
-                        <td class="text-center text-muted" colspan="14">Memuat...</td>
+                        <td class="text-center text-muted" colspan="15">Memuat...</td>
                     </tr>
                     </tbody>
                 </table>
@@ -202,16 +203,18 @@ ob_start();
                 $rows.empty();
 
                 if (!content.length) {
-                    $rows.append('<tr><td colspan="14" class="text-center text-muted">Tidak ada data</td></tr>');
+                    $rows.append('<tr><td colspan="15" class="text-center text-muted">Tidak ada data</td></tr>');
                 } else {
                     content.forEach(function (item) {
+                        const kwitansiRoute = '/api/reports/qurban/' + encodeURIComponent(item.id) + '/template.pdf';
+                        const kwitansiHtml = item.animalType === 'KAMBING'
+                            ? '<button class="btn btn-xs btn-secondary btn-kwitansi" data-id="' + escapeHtml(item.id) + '" type="button"><i class="fas fa-print"></i> Kwitansi</button>'
+                            : '<a class="btn btn-xs btn-secondary btn-kwitansi" href="/index.php?__route=' + encodeURIComponent(kwitansiRoute) + '"><i class="fas fa-print"></i> Kwitansi</a>';
                         const actionHtml = [
                             '<a class="btn btn-xs btn-info mr-1" href="/qurban/' + encodeURIComponent(item.id) + '/edit">',
                             '<i class="fas fa-edit"></i> Edit',
                             '</a>',
-                            '<button class="btn btn-xs btn-secondary btn-kwitansi" data-id="' + escapeHtml(item.id) + '" type="button">',
-                            '<i class="fas fa-print"></i> Kwitansi',
-                            '</button>'
+                            kwitansiHtml
                         ].join('');
 
                         $rows.append(
@@ -228,6 +231,7 @@ ob_start();
                                 '<td>' + escapeHtml(slaughterLabel(item.slaughterMode)) + '</td>' +
                                 '<td class="text-wrap" style="white-space:normal;min-width:200px;">' + escapeHtml(item.pickupTimeNotes || '-') + '</td>' +
                                 '<td>' + escapeHtml(item.committeePhone || '-') + '</td>' +
+                                '<td class="text-wrap" style="white-space:normal;min-width:200px;">' + escapeHtml(item.notes || '-') + '</td>' +
                                 '<td class="text-wrap" style="white-space:normal;min-width:180px;">' + escapeHtml(item.participantPreview || '-') + (item.participantCount > 3 ? ' +' + (item.participantCount - 3) : '') + '</td>' +
                                 '<td>' + actionHtml + '</td>' +
                             '</tr>'
@@ -269,7 +273,7 @@ ob_start();
 
                     render(data);
                 } catch (error) {
-                    $rows.html('<tr><td colspan="14" class="text-center text-danger">' + escapeHtml(error.message || 'Gagal memuat data') + '</td></tr>');
+                    $rows.html('<tr><td colspan="15" class="text-center text-danger">' + escapeHtml(error.message || 'Gagal memuat data') + '</td></tr>');
                     $pageInfo.text('');
                 }
             }
@@ -323,7 +327,9 @@ ob_start();
             });
 
             $rows.on('click', '.btn-kwitansi', function () {
-                window.alert('Fitur kwitansi qurban belum diaktifkan.');
+                if (!$(this).attr('href')) {
+                    window.alert('Template kwitansi kambing belum tersedia.');
+                }
             });
 
             resetFilters();

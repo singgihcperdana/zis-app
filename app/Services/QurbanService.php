@@ -54,6 +54,7 @@ final class QurbanService
             'slaughterMode' => $row['slaughter_mode'] !== null ? (string) $row['slaughter_mode'] : null,
             'pickupTimeNotes' => $row['pickup_time_notes'] !== null ? (string) $row['pickup_time_notes'] : null,
             'committeePhone' => $row['committee_phone'] !== null ? (string) $row['committee_phone'] : null,
+            'notes' => $row['notes'] !== null ? (string) $row['notes'] : null,
             'participants' => is_array($row['participants'] ?? null) ? array_values($row['participants']) : [],
         ];
     }
@@ -189,6 +190,7 @@ final class QurbanService
         $slaughterMode = trim((string) ($payload['slaughterMode'] ?? ''));
         $pickupTimeNotes = $this->normalizeOptionalText($payload['pickupTimeNotes'] ?? null);
         $committeePhone = $this->normalizeDigits($payload['committeePhone'] ?? null);
+        $notes = $this->normalizeOptionalText($payload['notes'] ?? null);
         $participants = $this->normalizeParticipants($payload['participants'] ?? []);
 
         if ($submissionDate === '') {
@@ -231,15 +233,7 @@ final class QurbanService
             throw new RuntimeException('Pilihan sembelih hewan qurban tidak valid');
         }
 
-        if ($animalType === 'KAMBING') {
-            if ($pickupTimeNotes === null) {
-                throw new RuntimeException('Waktu pengambilan wajib diisi untuk kambing');
-            }
-
-            if ($committeePhone === null) {
-                throw new RuntimeException('No. HP panitia wajib diisi untuk kambing');
-            }
-        } else {
+        if ($animalType !== 'KAMBING') {
             $pickupTimeNotes = null;
             $committeePhone = null;
         }
@@ -275,6 +269,7 @@ final class QurbanService
             'slaughter_mode' => $slaughterMode,
             'pickup_time_notes' => $pickupTimeNotes,
             'committee_phone' => $committeePhone,
+            'notes' => $notes,
             'created_by' => $this->normalizeOptionalText($actor),
             'updated_by' => $this->normalizeOptionalText($actor),
         ], $participants];

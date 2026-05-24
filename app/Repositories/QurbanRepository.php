@@ -59,6 +59,7 @@ final class QurbanRepository
                     q.slaughter_mode,
                     q.pickup_time_notes,
                     q.committee_phone
+                    ,q.notes
                  FROM qurban_submission q
                  WHERE q.id = :id
                  LIMIT 1'
@@ -106,6 +107,7 @@ final class QurbanRepository
                     slaughter_mode,
                     pickup_time_notes,
                     committee_phone,
+                    notes,
                     created_by,
                     updated_by
                  ) VALUES (
@@ -123,6 +125,7 @@ final class QurbanRepository
                     :slaughter_mode,
                     :pickup_time_notes,
                     :committee_phone,
+                    :notes,
                     :created_by,
                     :updated_by
                  )'
@@ -143,6 +146,7 @@ final class QurbanRepository
                 'slaughter_mode' => $submission['slaughter_mode'],
                 'pickup_time_notes' => $submission['pickup_time_notes'],
                 'committee_phone' => $submission['committee_phone'],
+                'notes' => $submission['notes'],
                 'created_by' => $submission['created_by'],
                 'updated_by' => $submission['updated_by'],
             ]);
@@ -220,7 +224,8 @@ final class QurbanRepository
                     q.biaya_supplier,
                     q.slaughter_mode,
                     q.pickup_time_notes,
-                    q.committee_phone
+                    q.committee_phone,
+                    q.notes
                  FROM qurban_submission q
                  {$whereSql}
                  ORDER BY
@@ -262,6 +267,7 @@ final class QurbanRepository
                     'slaughterMode' => $row['slaughter_mode'] !== null ? (string) $row['slaughter_mode'] : null,
                     'pickupTimeNotes' => $row['pickup_time_notes'] !== null ? (string) $row['pickup_time_notes'] : null,
                     'committeePhone' => $row['committee_phone'] !== null ? (string) $row['committee_phone'] : null,
+                    'notes' => $row['notes'] !== null ? (string) $row['notes'] : null,
                     'participantCount' => count($participants),
                     'participantPreview' => implode(', ', array_slice($participants, 0, 3)),
                 ];
@@ -307,6 +313,7 @@ final class QurbanRepository
                      slaughter_mode = :slaughter_mode,
                      pickup_time_notes = :pickup_time_notes,
                      committee_phone = :committee_phone,
+                     notes = :notes,
                      updated_by = :updated_by
                  WHERE id = :id'
             );
@@ -326,6 +333,7 @@ final class QurbanRepository
                 'slaughter_mode' => $submission['slaughter_mode'],
                 'pickup_time_notes' => $submission['pickup_time_notes'],
                 'committee_phone' => $submission['committee_phone'],
+                'notes' => $submission['notes'],
                 'updated_by' => $submission['updated_by'],
             ]);
 
