@@ -7,6 +7,7 @@ use App\Controllers\DashboardController;
 use App\Controllers\InstitutionProfileController;
 use App\Controllers\InternalController;
 use App\Controllers\PublicDashboardController;
+use App\Controllers\QurbanController;
 use App\Controllers\ReportController;
 use App\Controllers\UserManagementController;
 use App\Controllers\ZakatPaymentController;
@@ -37,6 +38,27 @@ return static function (Router $router): void {
         'roles' => ['ADMIN', 'OPERATOR'],
     ]);
     $router->get('/zakat-payments/list', [ZakatPaymentController::class, 'listPage'], [
+        'auth' => true,
+    ]);
+    $router->get('/qurban/new', [QurbanController::class, 'createForm'], [
+        'auth' => true,
+    ]);
+    $router->get('/qurban/{id}/edit', [QurbanController::class, 'editForm'], [
+        'auth' => true,
+    ]);
+    $router->get('/qurban/list', [QurbanController::class, 'listPage'], [
+        'auth' => true,
+    ]);
+    $router->post('/api/qurban', [QurbanController::class, 'createApi'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/qurban', [QurbanController::class, 'listApi'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/qurban/{id}', [QurbanController::class, 'showApi'], [
+        'auth' => true,
+    ]);
+    $router->put('/api/qurban/{id}', [QurbanController::class, 'updateApi'], [
         'auth' => true,
     ]);
     $router->post('/api/zakat-payments', [ZakatPaymentController::class, 'createApi'], [
@@ -81,6 +103,12 @@ return static function (Router $router): void {
         'auth' => true,
     ]);
     $router->get('/api/reports/kwitansi/{paymentId}/template/print', [ReportController::class, 'kwitansiTemplatePrint'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/reports/qurban/{qurbanId}/template.pdf', [ReportController::class, 'qurbanSapiTemplatePdf'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/reports/qurban/{qurbanId}/template/print', [ReportController::class, 'qurbanSapiTemplatePrint'], [
         'auth' => true,
     ]);
     $router->get('/settings/institution-profile', [InstitutionProfileController::class, 'edit'], [
