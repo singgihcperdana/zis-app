@@ -121,7 +121,7 @@ ob_start();
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="pickupTimeNotes">Waktu Pengambilan</label>
-                            <textarea class="form-control" id="pickupTimeNotes" placeholder="Contoh: Sabtu, 08 Juni 2026 jam 13.00 WIB" rows="2"></textarea>
+                            <input class="form-control" id="pickupTimeNotes" placeholder="Contoh: Setelah Dzuhur / 13.30 WIB" type="text">
                         </div>
                     </div>
                     <div class="col-md-6">

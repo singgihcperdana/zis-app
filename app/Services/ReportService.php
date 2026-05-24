@@ -64,7 +64,26 @@ final class ReportService
         'tanggal' => [489.0, 583.0, 514.0, 604.0],
         'bulan' => [525.0, 584.0, 550.0, 605.0],
         'tahun' => [563.0, 583.0, 600.0, 604.0],
+        'notes' => [162.0, 690.0, 397.0, 704.0],
         'nomorKurban' => [73.0, 506.0, 162.0, 567.0],
+    ];
+
+    private const QURBAN_KAMBING_FIELD_RECTS = [
+        'nama' => [162.0, 776.0, 397.0, 790.0],
+        'alamat' => [162.0, 759.0, 397.0, 773.0],
+        'telepon' => [163.0, 742.0, 398.0, 756.0],
+        'notes' => [163.0, 689.0, 398.0, 703.0],
+        'biayaKambing' => [191.0, 659.0, 290.0, 673.0],
+        'infak' => [192.0, 641.0, 291.0, 655.0],
+        'biayaSupplier' => [192.0, 625.0, 291.0, 639.0],
+        'isSembelihJagal' => [164.0, 597.0, 178.0, 611.0],
+        'isSembelihSendiri' => [306.0, 597.0, 320.0, 611.0],
+        'waktuPengambilan' => [140.0, 575.0, 211.0, 589.0],
+        'noPanitia' => [141.0, 560.0, 211.0, 574.0],
+        'tanggal' => [489.0, 584.0, 513.0, 598.0],
+        'bulan' => [521.0, 584.0, 554.0, 598.0],
+        'tahun' => [563.0, 584.0, 600.0, 598.0],
+        'nomorKurban' => [434.0, 625.0, 598.0, 777.0],
     ];
 
     private ZakatPaymentRepository $payments;
@@ -377,14 +396,6 @@ final class ReportService
         }
 
         $animalType = (string) ($qurban['animal_type'] ?? '');
-        if (!in_array($animalType, ['SAPI', 'SAPI_KOLEKTIF'], true)) {
-            throw new RuntimeException('Template kwitansi qurban baru tersedia untuk sapi.');
-        }
-
-        $templatePath = base_path('assets/pdf/form_qurban_sapi_v2_template.pdf');
-        if (!is_file($templatePath)) {
-            throw new RuntimeException('Template PDF form_qurban_sapi_v2_template.pdf tidak ditemukan');
-        }
 
         $submissionDate = (string) ($qurban['submission_date'] ?? '');
         $tanggal = '';
@@ -394,6 +405,45 @@ final class ReportService
             $tahun = $matches[1];
             $bulan = $matches[2];
             $tanggal = $matches[3];
+        }
+
+        if ($animalType === 'KAMBING') {
+            $templatePath = base_path('assets/pdf/form_kambing_template.pdf');
+            if (!is_file($templatePath)) {
+                throw new RuntimeException('Template PDF form_kambing_template.pdf tidak ditemukan');
+            }
+
+            $fields = [
+                'nama' => $this->safe((string) ($qurban['payer_name'] ?? '')),
+                'alamat' => $this->safe((string) ($qurban['alamat'] ?? '')),
+                'telepon' => $this->safe((string) ($qurban['payer_phone'] ?? '')),
+                'notes' => $this->safe((string) ($qurban['notes'] ?? '')),
+                'biayaKambing' => $this->formatCurrency($qurban['biaya_pemeliharaan'] ?? null),
+                'infak' => $this->formatCurrency($qurban['shodaqoh_infak'] ?? null),
+                'biayaSupplier' => $this->formatCurrency($qurban['biaya_supplier'] ?? null),
+                'waktuPengambilan' => $this->safe((string) ($qurban['pickup_time_notes'] ?? '')),
+                'noPanitia' => $this->safe((string) ($qurban['committee_phone'] ?? '')),
+                'tanggal' => $tanggal,
+                'bulan' => $bulan,
+                'tahun' => $tahun,
+                'nomorKurban' => $this->safe((string) ($qurban['qurban_number'] ?? '')),
+            ];
+
+            $checkboxes = [
+                'isSembelihJagal' => (string) ($qurban['slaughter_mode'] ?? '') === 'JAGAL',
+                'isSembelihSendiri' => (string) ($qurban['slaughter_mode'] ?? '') === 'SENDIRI',
+            ];
+
+            return $this->renderPdfTemplate($templatePath, $fields, $checkboxes, self::QURBAN_KAMBING_FIELD_RECTS);
+        }
+
+        if (!in_array($animalType, ['SAPI', 'SAPI_KOLEKTIF'], true)) {
+            throw new RuntimeException('Template kwitansi qurban belum tersedia untuk jenis hewan ini.');
+        }
+
+        $templatePath = base_path('assets/pdf/form_qurban_sapi_v2_template.pdf');
+        if (!is_file($templatePath)) {
+            throw new RuntimeException('Template PDF form_qurban_sapi_v2_template.pdf tidak ditemukan');
         }
 
         $participants = is_array($qurban['participants'] ?? null) ? array_values($qurban['participants']) : [];
@@ -450,6 +500,7 @@ final class ReportService
     private function drawPdfFields(Fpdi $pdf, float $pageHeight, array $fields, array $checkboxes, array $fieldRects): void
     {
         $isQurbanSapiTemplate = $fieldRects === self::QURBAN_SAPI_FIELD_RECTS;
+        $isQurbanKambingTemplate = $fieldRects === self::QURBAN_KAMBING_FIELD_RECTS;
 
         foreach ($fields as $name => $value) {
             if (!isset($fieldRects[$name])) {
@@ -459,7 +510,9 @@ final class ReportService
             [$x1, $y1, $x2, $y2] = $fieldRects[$name];
             $fontSize = match (true) {
                 $isQurbanSapiTemplate && $name === 'nomorKurban' => 76,
+                $isQurbanKambingTemplate && $name === 'nomorKurban' => 150,
                 $isQurbanSapiTemplate => 11,
+                $isQurbanKambingTemplate => 11,
                 $name === 'noKwitansi' => 10,
                 default => 9,
             };
@@ -472,7 +525,7 @@ final class ReportService
             $fontStyle = $name === 'nomorKurban' ? 'B' : '';
             $align = match (true) {
                 $name === 'nomorKurban' => 'C',
-                in_array($name, ['biayaSapi', 'infak', 'biayaSupplier'], true) => 'R',
+                in_array($name, ['biayaSapi', 'biayaKambing', 'infak', 'biayaSupplier'], true) => 'R',
                 default => 'L',
             };
 
