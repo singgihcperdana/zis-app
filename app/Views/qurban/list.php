@@ -206,10 +206,10 @@ ob_start();
                     $rows.append('<tr><td colspan="15" class="text-center text-muted">Tidak ada data</td></tr>');
                 } else {
                     content.forEach(function (item) {
-                        const kwitansiRoute = '/api/reports/qurban/' + encodeURIComponent(item.id) + '/template.pdf';
+                        const kwitansiRoute = '/api/reports/qurban/' + encodeURIComponent(item.id) + '/template/print';
                         const kwitansiHtml = item.animalType === 'KAMBING'
                             ? '<button class="btn btn-xs btn-secondary btn-kwitansi" data-id="' + escapeHtml(item.id) + '" type="button"><i class="fas fa-print"></i> Kwitansi</button>'
-                            : '<a class="btn btn-xs btn-secondary btn-kwitansi" href="/index.php?__route=' + encodeURIComponent(kwitansiRoute) + '"><i class="fas fa-print"></i> Kwitansi</a>';
+                            : '<a class="btn btn-xs btn-secondary btn-kwitansi" href="/index.php?__route=' + encodeURIComponent(kwitansiRoute) + '" target="_blank" rel="noopener"><i class="fas fa-print"></i> Kwitansi</a>';
                         const actionHtml = [
                             '<a class="btn btn-xs btn-info mr-1" href="/qurban/' + encodeURIComponent(item.id) + '/edit">',
                             '<i class="fas fa-edit"></i> Edit',

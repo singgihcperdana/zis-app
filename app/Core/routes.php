@@ -108,6 +108,9 @@ return static function (Router $router): void {
     $router->get('/api/reports/qurban/{qurbanId}/template.pdf', [ReportController::class, 'qurbanSapiTemplatePdf'], [
         'auth' => true,
     ]);
+    $router->get('/api/reports/qurban/{qurbanId}/template/print', [ReportController::class, 'qurbanSapiTemplatePrint'], [
+        'auth' => true,
+    ]);
     $router->get('/settings/institution-profile', [InstitutionProfileController::class, 'edit'], [
         'auth' => true,
         'roles' => ['ADMIN'],
