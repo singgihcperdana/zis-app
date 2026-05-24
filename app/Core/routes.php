@@ -43,7 +43,22 @@ return static function (Router $router): void {
     $router->get('/qurban/new', [QurbanController::class, 'createForm'], [
         'auth' => true,
     ]);
+    $router->get('/qurban/{id}/edit', [QurbanController::class, 'editForm'], [
+        'auth' => true,
+    ]);
+    $router->get('/qurban/list', [QurbanController::class, 'listPage'], [
+        'auth' => true,
+    ]);
     $router->post('/api/qurban', [QurbanController::class, 'createApi'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/qurban', [QurbanController::class, 'listApi'], [
+        'auth' => true,
+    ]);
+    $router->get('/api/qurban/{id}', [QurbanController::class, 'showApi'], [
+        'auth' => true,
+    ]);
+    $router->put('/api/qurban/{id}', [QurbanController::class, 'updateApi'], [
         'auth' => true,
     ]);
     $router->post('/api/zakat-payments', [ZakatPaymentController::class, 'createApi'], [

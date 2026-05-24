@@ -1,6 +1,7 @@
 <?php
 
-$title = $title ?? 'Input Qurban';
+$title = $title ?? 'Edit Qurban';
+$qurbanId = (string) ($qurbanId ?? '');
 
 ob_start();
 ?>
@@ -8,12 +9,13 @@ ob_start();
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0 text-dark">Input Qurban</h1>
+                <h1 class="m-0 text-dark">Edit Qurban</h1>
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
                     <li class="breadcrumb-item"><a href="/">Home</a></li>
-                    <li class="breadcrumb-item active">Input Qurban</li>
+                    <li class="breadcrumb-item"><a href="/qurban/list">Riwayat Qurban</a></li>
+                    <li class="breadcrumb-item active">Edit Qurban</li>
                 </ol>
             </div>
         </div>
@@ -24,9 +26,6 @@ ob_start();
     <div class="container-fluid">
         <div class="alert alert-success d-none" id="alertSuccess"></div>
         <div class="alert alert-danger d-none" id="alertError"></div>
-        <div class="alert alert-info">
-            Form input qurban sudah disiapkan. Penyimpanan data, cetak kwitansi, dan report akan menyusul di tahap berikutnya.
-        </div>
 
         <div class="card card-outline card-success">
             <div class="card-header bg-light">
@@ -91,7 +90,7 @@ ob_start();
                         <div class="form-group">
                             <label for="qurbanNumber">Nomor Qurban *</label>
                             <input class="form-control digits-only" id="qurbanNumber" inputmode="numeric" placeholder="Contoh: 01" required type="text">
-                            <small class="text-muted">Diisi manual, hanya angka 0-9, dan harus unik. Nomor yang sudah dipakai akan ditolak saat simpan.</small>
+                            <small class="text-muted">Diisi manual, hanya angka 0-9, dan harus unik.</small>
                         </div>
                     </div>
                 </div>
@@ -146,9 +145,10 @@ ob_start();
         <div class="card">
             <div class="card-body">
                 <button class="btn btn-primary" id="btnSave" type="button">
-                    <i class="fas fa-save"></i> Simpan Qurban
+                    <i class="fas fa-save"></i> Update Qurban
                 </button>
                 <button class="btn btn-default" id="btnReset" type="button">Reset</button>
+                <a class="btn btn-link" href="/qurban/list">Kembali ke Riwayat</a>
             </div>
         </div>
     </div>
@@ -158,6 +158,7 @@ ob_start();
     window.addEventListener('load', function () {
         (function () {
             const csrfToken = <?= json_encode((string) ($csrfToken ?? '')); ?>;
+            const qurbanId = <?= json_encode($qurbanId); ?>;
             const $alertSuccess = $('#alertSuccess');
             const $alertError = $('#alertError');
             const $submissionDate = $('#submissionDate');
@@ -175,11 +176,11 @@ ob_start();
             const $slaughterMode = $('#slaughterMode');
             const $pickupTimeNotes = $('#pickupTimeNotes');
             const $committeePhone = $('#committeePhone');
-            const $digitsOnlyInputs = $('.digits-only');
-            const $amountInputs = $('.amount-input');
             const $btnReset = $('#btnReset');
             const $btnSave = $('#btnSave');
-            const $infoAlert = $('.alert-info');
+
+            let originalData = null;
+            let syncingFirstParticipant = false;
 
             function buildParticipantFields() {
                 $participantContainer.empty();
@@ -198,24 +199,8 @@ ob_start();
                 }
             }
 
-            function syncFirstParticipantWithPayerName() {
-                if ($animalType.val() !== 'SAPI_KOLEKTIF') {
-                    return;
-                }
-
-                $('#participant1').val($payerName.val() || '');
-            }
-
-            function syncAnimalSections() {
-                const animalType = $animalType.val();
-                const isGoat = animalType === 'KAMBING';
-                const isCollective = animalType === 'SAPI_KOLEKTIF';
-                $participantCard.toggleClass('d-none', !isCollective);
-                $goatPickupFields.toggleClass('d-none', !isGoat);
-
-                if (isCollective) {
-                    syncFirstParticipantWithPayerName();
-                }
+            function participantInputs() {
+                return Array.from(document.querySelectorAll('.participant-input'));
             }
 
             function keepDigitsOnly(value) {
@@ -231,6 +216,14 @@ ob_start();
                 return new Intl.NumberFormat('id-ID').format(Number(digits));
             }
 
+            function formatAmountValue(value) {
+                if (value == null || value === '') {
+                    return '';
+                }
+
+                return formatThousands(String(value));
+            }
+
             function showError(message) {
                 $alertSuccess.addClass('d-none').text('');
                 $alertError.removeClass('d-none').text(message || 'Terjadi kesalahan.');
@@ -243,8 +236,39 @@ ob_start();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
+            function syncFirstParticipantWithPayerName(force) {
+                if ($animalType.val() !== 'SAPI_KOLEKTIF') {
+                    return;
+                }
+
+                const firstInput = document.getElementById('participant1');
+                if (!firstInput) {
+                    return;
+                }
+
+                if (!force && document.activeElement === firstInput) {
+                    return;
+                }
+
+                syncingFirstParticipant = true;
+                firstInput.value = $payerName.val() || '';
+                syncingFirstParticipant = false;
+            }
+
+            function syncAnimalSections() {
+                const animalType = $animalType.val();
+                const isGoat = animalType === 'KAMBING';
+                const isCollective = animalType === 'SAPI_KOLEKTIF';
+                $participantCard.toggleClass('d-none', !isCollective);
+                $goatPickupFields.toggleClass('d-none', !isGoat);
+
+                if (isCollective) {
+                    syncFirstParticipantWithPayerName(true);
+                }
+            }
+
             function collectParticipants() {
-                return Array.from(document.querySelectorAll('.participant-input')).map(function (input) {
+                return participantInputs().map(function (input) {
                     return (input.value || '').trim();
                 });
             }
@@ -278,6 +302,51 @@ ob_start();
                 return null;
             }
 
+            function fillForm(data) {
+                originalData = data;
+                $submissionDate.val(data.submissionDate || '');
+                $qurbanNumber.val(keepDigitsOnly(data.qurbanNumber || ''));
+                $payerName.val(data.payerName || '');
+                $payerPhone.val(data.payerPhone || '');
+                $alamat.val(data.alamat || '');
+                $animalType.val(data.animalType || 'KAMBING');
+                $biayaPemeliharaan.val(formatAmountValue(data.biayaPemeliharaan));
+                $shodaqohInfak.val(formatAmountValue(data.shodaqohInfak));
+                $biayaSupplier.val(formatAmountValue(data.biayaSupplier));
+                $slaughterMode.val(data.slaughterMode || 'JAGAL');
+                $pickupTimeNotes.val(data.pickupTimeNotes || '');
+                $committeePhone.val(data.committeePhone || '');
+
+                participantInputs().forEach(function (input, index) {
+                    input.value = Array.isArray(data.participants) ? (data.participants[index] || '') : '';
+                });
+
+                syncAnimalSections();
+            }
+
+            async function loadQurban() {
+                $btnSave.prop('disabled', true);
+
+                try {
+                    const response = await fetch('/api/qurban/' + encodeURIComponent(qurbanId), {
+                        headers: { Accept: 'application/json' }
+                    });
+                    const data = await response.json().catch(function () {
+                        return {};
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Gagal memuat data qurban.');
+                    }
+
+                    fillForm(data);
+                } catch (error) {
+                    showError(error.message || 'Gagal memuat data qurban.');
+                } finally {
+                    $btnSave.prop('disabled', false);
+                }
+            }
+
             async function saveQurban() {
                 const validationMessage = validateRequiredFields();
                 if (validationMessage) {
@@ -288,8 +357,8 @@ ob_start();
                 $btnSave.prop('disabled', true);
 
                 try {
-                    const response = await fetch('/api/qurban', {
-                        method: 'POST',
+                    const response = await fetch('/api/qurban/' + encodeURIComponent(qurbanId), {
+                        method: 'PUT',
                         headers: {
                             'Accept': 'application/json',
                             'Content-Type': 'application/json'
@@ -302,46 +371,48 @@ ob_start();
                     });
 
                     if (!response.ok) {
-                        throw new Error(data.message || 'Simpan qurban gagal.');
+                        throw new Error(data.message || 'Update qurban gagal.');
                     }
 
-                    showSuccess(data.message || 'Data qurban berhasil disimpan.');
-                    resetForm();
-                    $qurbanNumber.focus();
+                    showSuccess(data.message || 'Data qurban berhasil diperbarui.');
+                    if (data.data) {
+                        fillForm(data.data);
+                    }
                 } catch (error) {
-                    showError(error.message || 'Simpan qurban gagal.');
+                    showError(error.message || 'Update qurban gagal.');
                 } finally {
                     $btnSave.prop('disabled', false);
                 }
             }
 
             function resetForm() {
-                document.querySelectorAll('input:not([disabled]), textarea, select').forEach(function (el) {
-                    if (el.tagName === 'SELECT') {
-                        el.selectedIndex = 0;
-                        return;
-                    }
+                if (!originalData) {
+                    return;
+                }
 
-                    el.value = '';
-                });
-
-                $submissionDate.val(new Date().toISOString().slice(0, 10));
-                $animalType.val('KAMBING');
-                syncAnimalSections();
+                fillForm(originalData);
+                $alertError.addClass('d-none').text('');
+                $alertSuccess.addClass('d-none').text('');
             }
 
-            $animalType.on('change', syncAnimalSections);
-            $payerName.on('input', syncFirstParticipantWithPayerName);
-            $digitsOnlyInputs.on('input', function () {
+            $(document).on('input', '.digits-only', function () {
                 const cleaned = keepDigitsOnly(this.value);
                 if (this.value !== cleaned) {
                     this.value = cleaned;
                 }
             });
-            $amountInputs.on('input', function () {
+
+            $(document).on('input', '.amount-input', function () {
                 const formatted = formatThousands(this.value);
                 if (this.value !== formatted) {
                     this.value = formatted;
+                }
+            });
+
+            $animalType.on('change', syncAnimalSections);
+            $payerName.on('input', function () {
+                if (!syncingFirstParticipant) {
+                    syncFirstParticipantWithPayerName(false);
                 }
             });
 
@@ -354,8 +425,7 @@ ob_start();
             });
 
             buildParticipantFields();
-            $infoAlert.remove();
-            resetForm();
+            loadQurban();
         })();
     });
 </script>

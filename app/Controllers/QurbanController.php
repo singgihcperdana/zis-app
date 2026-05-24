@@ -31,6 +31,37 @@ final class QurbanController
         ]);
     }
 
+    public function listPage(): void
+    {
+        View::render('qurban/list', [
+            'title' => 'Riwayat Qurban',
+            'csrfToken' => Session::csrfToken(),
+            'user' => $this->auth->user(),
+        ]);
+    }
+
+    public function editForm(string $id): void
+    {
+        View::render('qurban/edit', [
+            'title' => 'Edit Qurban',
+            'csrfToken' => Session::csrfToken(),
+            'user' => $this->auth->user(),
+            'qurbanId' => $id,
+        ]);
+    }
+
+    public function showApi(string $id): void
+    {
+        try {
+            Response::json($this->qurban->getById($id));
+        } catch (RuntimeException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], 404);
+        }
+    }
+
     public function createApi(): void
     {
         $rawBody = file_get_contents('php://input');
@@ -61,6 +92,53 @@ final class QurbanController
                 'qurbanNumber' => (string) $created['qurbanNumber'],
                 'message' => 'Data qurban berhasil disimpan.',
             ], 201);
+        } catch (RuntimeException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], 400);
+        }
+    }
+
+    public function listApi(): void
+    {
+        try {
+            Response::json($this->qurban->search($_GET));
+        } catch (RuntimeException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], 400);
+        }
+    }
+
+    public function updateApi(string $id): void
+    {
+        $rawBody = file_get_contents('php://input');
+        $payload = json_decode(is_string($rawBody) ? $rawBody : '', true);
+
+        if (!is_array($payload)) {
+            Response::json([
+                'success' => false,
+                'message' => 'Payload tidak valid.',
+            ], 422);
+        }
+
+        $csrfToken = $payload['_csrf'] ?? null;
+        if (!Session::verifyCsrf(is_string($csrfToken) ? $csrfToken : null)) {
+            Response::json([
+                'success' => false,
+                'message' => 'Token keamanan tidak valid. Silakan muat ulang halaman.',
+            ], 419);
+        }
+
+        try {
+            $currentUser = $this->auth->user();
+            Response::json([
+                'success' => true,
+                'message' => 'Data qurban berhasil diperbarui.',
+                'data' => $this->qurban->update($id, $payload, (string) ($currentUser['username'] ?? '')),
+            ]);
         } catch (RuntimeException $exception) {
             Response::json([
                 'success' => false,

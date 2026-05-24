@@ -115,6 +115,12 @@
                                         <p>Input Qurban</p>
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/qurban/list" data-nav-prefix="/qurban/list">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Riwayat Qurban</p>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
 
