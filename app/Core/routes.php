@@ -7,6 +7,7 @@ use App\Controllers\DashboardController;
 use App\Controllers\InstitutionProfileController;
 use App\Controllers\InternalController;
 use App\Controllers\PublicDashboardController;
+use App\Controllers\QurbanController;
 use App\Controllers\ReportController;
 use App\Controllers\UserManagementController;
 use App\Controllers\ZakatPaymentController;
@@ -37,6 +38,12 @@ return static function (Router $router): void {
         'roles' => ['ADMIN', 'OPERATOR'],
     ]);
     $router->get('/zakat-payments/list', [ZakatPaymentController::class, 'listPage'], [
+        'auth' => true,
+    ]);
+    $router->get('/qurban/new', [QurbanController::class, 'createForm'], [
+        'auth' => true,
+    ]);
+    $router->post('/api/qurban', [QurbanController::class, 'createApi'], [
         'auth' => true,
     ]);
     $router->post('/api/zakat-payments', [ZakatPaymentController::class, 'createApi'], [

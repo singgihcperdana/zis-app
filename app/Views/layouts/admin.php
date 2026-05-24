@@ -102,6 +102,24 @@
 
                         <li class="nav-item has-treeview">
                             <a class="nav-link" href="#">
+                                <i class="nav-icon fas fa-paw"></i>
+                                <p>
+                                    Qurban
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/qurban/new" data-nav-prefix="/qurban/new">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Input Qurban</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item has-treeview">
+                            <a class="nav-link" href="#">
                                 <i class="nav-icon fas fa-file-alt"></i>
                                 <p>
                                     Report
