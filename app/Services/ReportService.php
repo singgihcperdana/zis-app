@@ -381,9 +381,9 @@ final class ReportService
             throw new RuntimeException('Template kwitansi qurban baru tersedia untuk sapi.');
         }
 
-        $templatePath = base_path('assets/pdf/form_qurban_sapi.pdf.pdf');
+        $templatePath = base_path('assets/pdf/form_qurban_sapi.pdf');
         if (!is_file($templatePath)) {
-            throw new RuntimeException('Template PDF form_qurban_sapi.pdf.pdf tidak ditemukan');
+            throw new RuntimeException('Template PDF form_qurban_sapi.pdf tidak ditemukan');
         }
 
         $submissionDate = (string) ($qurban['submission_date'] ?? '');
