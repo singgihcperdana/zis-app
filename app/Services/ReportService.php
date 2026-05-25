@@ -421,7 +421,7 @@ final class ReportService
                 'biayaKambing' => $this->formatCurrency($qurban['biaya_pemeliharaan'] ?? null),
                 'infak' => $this->formatCurrency($qurban['shodaqoh_infak'] ?? null),
                 'biayaSupplier' => $this->formatCurrency($qurban['biaya_supplier'] ?? null),
-                'waktuPengambilan' => $this->formatPickupTime($qurban['pickup_time_notes'] ?? null),
+                'waktuPengambilan' => $this->safe((string) ($qurban['pickup_time_notes'] ?? '')),
                 'noPanitia' => $this->safe((string) ($qurban['committee_phone'] ?? '')),
                 'tanggal' => $tanggal,
                 'bulan' => $bulan,
@@ -572,20 +572,6 @@ final class ReportService
         }
 
         return number_format((float) $value, 0, ',', '.');
-    }
-
-    private function formatPickupTime($value): string
-    {
-        $text = trim((string) $value);
-        if ($text === '') {
-            return '';
-        }
-
-        if (preg_match('/\bWIB\b/i', $text) === 1) {
-            return $this->safe($text);
-        }
-
-        return $this->safe($text . ' WIB');
     }
 
     private function formatNumber($value): string

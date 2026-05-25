@@ -11,6 +11,7 @@ use RuntimeException;
 final class QurbanRepository
 {
     private const SORT_COLUMNS = [
+        'updatedAt' => 'q.updated_at',
         'submissionDate' => 'q.submission_date',
         'qurbanNumber' => 'q.qurban_number',
         'payerName' => 'q.payer_name',
@@ -214,6 +215,7 @@ final class QurbanRepository
                     q.id,
                     q.qurban_number,
                     q.submission_date,
+                    q.updated_at,
                     q.payer_name,
                     q.payer_phone,
                     q.alamat,
@@ -231,7 +233,7 @@ final class QurbanRepository
                  ORDER BY
                     CASE WHEN {$sortColumn} IS NULL THEN 1 ELSE 0 END ASC,
                     {$sortColumn} {$sortDir},
-                    q.submission_date DESC,
+                    q.updated_at DESC,
                     q.id DESC
                  LIMIT :limit OFFSET :offset"
             );
@@ -256,6 +258,7 @@ final class QurbanRepository
                     'id' => (string) $row['id'],
                     'qurbanNumber' => (string) $row['qurban_number'],
                     'submissionDate' => $row['submission_date'] !== null ? str_replace(' ', 'T', (string) $row['submission_date']) : null,
+                    'updatedAt' => $row['updated_at'] !== null ? str_replace(' ', 'T', (string) $row['updated_at']) : null,
                     'payerName' => $row['payer_name'] !== null ? (string) $row['payer_name'] : null,
                     'payerPhone' => $row['payer_phone'] !== null ? (string) $row['payer_phone'] : null,
                     'alamat' => $row['alamat'] !== null ? (string) $row['alamat'] : null,

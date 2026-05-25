@@ -36,7 +36,7 @@ ob_start();
                 <div class="row">
                     <div class="col-md-3">
                         <div class="form-group">
-                            <label for="submissionDate">Tanggal Input</label>
+                            <label for="submissionDate">Tanggal Penyerahan</label>
                             <input class="form-control" id="submissionDate" type="date">
                         </div>
                     </div>
