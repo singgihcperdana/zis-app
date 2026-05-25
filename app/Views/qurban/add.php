@@ -127,7 +127,7 @@ ob_start();
                     <div class="col-md-6">
                         <div class="form-group mb-0">
                             <label for="committeePhone">No. HP Panitia</label>
-                            <input class="form-control digits-only" id="committeePhone" inputmode="numeric" placeholder="Nomor panitia yang bisa dihubungi" type="text">
+                            <input class="form-control" id="committeePhone" placeholder="Nomor panitia yang bisa dihubungi" type="text">
                         </div>
                     </div>
                 </div>

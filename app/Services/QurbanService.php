@@ -189,7 +189,7 @@ final class QurbanService
         $biayaSupplier = $this->normalizeOptionalAmount($payload['biayaSupplier'] ?? null);
         $slaughterMode = trim((string) ($payload['slaughterMode'] ?? ''));
         $pickupTimeNotes = $this->normalizeOptionalText($payload['pickupTimeNotes'] ?? null);
-        $committeePhone = $this->normalizeDigits($payload['committeePhone'] ?? null);
+        $committeePhone = $this->normalizeOptionalText($payload['committeePhone'] ?? null);
         $notes = $this->normalizeOptionalText($payload['notes'] ?? null);
         $participants = $this->normalizeParticipants($payload['participants'] ?? []);
 
