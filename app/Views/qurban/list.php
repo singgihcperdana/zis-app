@@ -78,7 +78,8 @@ ob_start();
                     <thead>
                     <tr>
                         <th><button class="btn btn-xl btn-link text-dark p-0 sort-btn font-weight-bold" data-sort-key="qurbanNumber" type="button">Nomor Qurban <i class="fas fa-sort ml-1"></i></button></th>
-                        <th><button class="btn btn-xl btn-link text-dark p-0 sort-btn font-weight-bold" data-sort-key="submissionDate" type="button">Tanggal Input <i class="fas fa-sort ml-1"></i></button></th>
+                        <th><button class="btn btn-xl btn-link text-dark p-0 sort-btn font-weight-bold" data-sort-key="submissionDate" type="button">Tanggal Penyerahan <i class="fas fa-sort ml-1"></i></button></th>
+                        <th><button class="btn btn-xl btn-link text-dark p-0 sort-btn font-weight-bold" data-sort-key="updatedAt" type="button">Tanggal Update <i class="fas fa-sort ml-1"></i></button></th>
                         <th><button class="btn btn-xl btn-link text-dark p-0 sort-btn font-weight-bold" data-sort-key="payerName" type="button">Nama <i class="fas fa-sort ml-1"></i></button></th>
                         <th><button class="btn btn-xl btn-link text-dark p-0 sort-btn font-weight-bold" data-sort-key="animalType" type="button">Jenis Hewan <i class="fas fa-sort ml-1"></i></button></th>
                         <th>Telp / HP</th>
@@ -96,7 +97,7 @@ ob_start();
                     </thead>
                     <tbody id="qurbanRows">
                     <tr>
-                        <td class="text-center text-muted" colspan="15">Memuat...</td>
+                        <td class="text-center text-muted" colspan="16">Memuat...</td>
                     </tr>
                     </tbody>
                 </table>
@@ -130,7 +131,7 @@ ob_start();
 
             let page = 0;
             const size = 20;
-            let sortKey = 'submissionDate';
+            let sortKey = 'updatedAt';
             let sortDir = 'desc';
 
             function sortIconClass(key) {
@@ -156,7 +157,7 @@ ob_start();
                     .replaceAll("'", '&#039;');
             }
 
-            function formatDate(iso) {
+            function formatDateOnly(iso) {
                 if (!iso) return '-';
                 const d = new Date(iso);
                 if (Number.isNaN(d.getTime())) return iso;
@@ -165,6 +166,25 @@ ob_start();
                     month: 'long',
                     year: 'numeric'
                 }).format(d);
+            }
+
+            function formatDateTime(iso) {
+                if (!iso) return '-';
+                const d = new Date(iso);
+                if (Number.isNaN(d.getTime())) return iso;
+
+                const datePart = new Intl.DateTimeFormat('id-ID', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                }).format(d);
+                const timePart = new Intl.DateTimeFormat('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                }).format(d).replace(/\./g, ':');
+
+                return datePart + ' ' + timePart;
             }
 
             function formatMoney(value) {
@@ -203,7 +223,7 @@ ob_start();
                 $rows.empty();
 
                 if (!content.length) {
-                    $rows.append('<tr><td colspan="15" class="text-center text-muted">Tidak ada data</td></tr>');
+                    $rows.append('<tr><td colspan="16" class="text-center text-muted">Tidak ada data</td></tr>');
                 } else {
                     content.forEach(function (item) {
                         const kwitansiRoute = '/api/reports/qurban/' + encodeURIComponent(item.id) + '/template/print';
@@ -218,7 +238,8 @@ ob_start();
                         $rows.append(
                             '<tr>' +
                                 '<td><code>' + escapeHtml(item.qurbanNumber || '-') + '</code></td>' +
-                                '<td>' + escapeHtml(formatDate(item.submissionDate)) + '</td>' +
+                                '<td>' + escapeHtml(formatDateOnly(item.submissionDate)) + '</td>' +
+                                '<td>' + escapeHtml(formatDateTime(item.updatedAt)) + '</td>' +
                                 '<td>' + escapeHtml(item.payerName || '-') + '</td>' +
                                 '<td>' + escapeHtml(animalLabel(item.animalType)) + '</td>' +
                                 '<td>' + escapeHtml(item.payerPhone || '-') + '</td>' +
@@ -257,7 +278,7 @@ ob_start();
                 params.append('sort[key]', sortKey);
                 params.append('sort[dir]', sortDir);
 
-                $rows.html('<tr><td colspan="13" class="text-center text-muted">Memuat...</td></tr>');
+                $rows.html('<tr><td colspan="16" class="text-center text-muted">Memuat...</td></tr>');
 
                 try {
                     const response = await fetch('/api/qurban?' + params.toString(), {
@@ -271,7 +292,7 @@ ob_start();
 
                     render(data);
                 } catch (error) {
-                    $rows.html('<tr><td colspan="15" class="text-center text-danger">' + escapeHtml(error.message || 'Gagal memuat data') + '</td></tr>');
+                    $rows.html('<tr><td colspan="16" class="text-center text-danger">' + escapeHtml(error.message || 'Gagal memuat data') + '</td></tr>');
                     $pageInfo.text('');
                 }
             }
@@ -283,6 +304,8 @@ ob_start();
                 $filterAnimalType.val('');
                 $filterQ.val('');
                 page = 0;
+                sortKey = 'updatedAt';
+                sortDir = 'desc';
             }
 
             $btnApply.on('click', function () {

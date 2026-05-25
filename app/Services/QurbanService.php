@@ -122,9 +122,9 @@ final class QurbanService
         }
 
         $value = trim((string) $value);
-        return in_array($value, ['submissionDate', 'qurbanNumber', 'payerName', 'animalType'], true)
+        return in_array($value, ['updatedAt', 'submissionDate', 'qurbanNumber', 'payerName', 'animalType'], true)
             ? $value
-            : 'submissionDate';
+            : 'updatedAt';
     }
 
     private function normalizeSortDir($value): string
