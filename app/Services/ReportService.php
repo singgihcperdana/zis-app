@@ -69,21 +69,21 @@ final class ReportService
     ];
 
     private const QURBAN_KAMBING_FIELD_RECTS = [
-        'nama' => [162.0, 776.0, 397.0, 790.0],
-        'alamat' => [162.0, 759.0, 397.0, 773.0],
-        'telepon' => [163.0, 742.0, 398.0, 756.0],
-        'notes' => [163.0, 689.0, 398.0, 703.0],
-        'biayaKambing' => [191.0, 659.0, 290.0, 673.0],
-        'infak' => [192.0, 641.0, 291.0, 655.0],
-        'biayaSupplier' => [192.0, 625.0, 291.0, 639.0],
+        'nama' => [162.0, 776.0, 398.0, 790.0],
+        'alamat' => [162.0, 759.0, 398.0, 773.0],
+        'telepon' => [162.0, 742.0, 398.0, 756.0],
+        'notes' => [163.0, 688.0, 399.0, 702.0],
+        'biayaKambing' => [190.0, 659.0, 290.0, 673.0],
+        'infak' => [191.0, 641.0, 291.0, 655.0],
+        'biayaSupplier' => [191.0, 624.0, 291.0, 638.0],
         'isSembelihJagal' => [164.0, 597.0, 178.0, 611.0],
         'isSembelihSendiri' => [306.0, 597.0, 320.0, 611.0],
-        'waktuPengambilan' => [140.0, 575.0, 211.0, 589.0],
-        'noPanitia' => [141.0, 560.0, 211.0, 574.0],
-        'tanggal' => [489.0, 584.0, 513.0, 598.0],
-        'bulan' => [521.0, 584.0, 554.0, 598.0],
-        'tahun' => [563.0, 584.0, 600.0, 598.0],
-        'nomorKurban' => [434.0, 625.0, 598.0, 777.0],
+        'waktuPengambilan' => [101.0, 550.0, 220.0, 564.0],
+        'noPanitia' => [101.0, 520.0, 220.0, 534.0],
+        'tanggal' => [488.0, 584.0, 515.0, 598.0],
+        'bulan' => [524.0, 583.0, 551.0, 597.0],
+        'tahun' => [563.0, 583.0, 597.0, 597.0],
+        'nomorKurban' => [439.0, 632.0, 594.0, 773.0],
     ];
 
     private ZakatPaymentRepository $payments;
@@ -408,9 +408,9 @@ final class ReportService
         }
 
         if ($animalType === 'KAMBING') {
-            $templatePath = base_path('assets/pdf/form_kambing_template.pdf');
+            $templatePath = base_path('assets/pdf/form_kambing_template_v2.pdf');
             if (!is_file($templatePath)) {
-                throw new RuntimeException('Template PDF form_kambing_template.pdf tidak ditemukan');
+                throw new RuntimeException('Template PDF form_kambing_template_v2.pdf tidak ditemukan');
             }
 
             $fields = [
@@ -421,7 +421,7 @@ final class ReportService
                 'biayaKambing' => $this->formatCurrency($qurban['biaya_pemeliharaan'] ?? null),
                 'infak' => $this->formatCurrency($qurban['shodaqoh_infak'] ?? null),
                 'biayaSupplier' => $this->formatCurrency($qurban['biaya_supplier'] ?? null),
-                'waktuPengambilan' => $this->safe((string) ($qurban['pickup_time_notes'] ?? '')),
+                'waktuPengambilan' => $this->formatPickupTime($qurban['pickup_time_notes'] ?? null),
                 'noPanitia' => $this->safe((string) ($qurban['committee_phone'] ?? '')),
                 'tanggal' => $tanggal,
                 'bulan' => $bulan,
@@ -520,11 +520,19 @@ final class ReportService
             $rectTop = $pageHeight - $y2;
             $rectHeight = max(0, $y2 - $y1);
             $textY = $rectTop + max(0, ($rectHeight - $fontSize) / 2);
+            if ($isQurbanKambingTemplate && in_array($name, ['bulan', 'tahun'], true)) {
+                $textY = $rectTop;
+            }
 
             $fontFamily = $name === 'nomorKurban' ? 'Helvetica' : 'Times';
-            $fontStyle = $name === 'nomorKurban' ? 'B' : '';
+            $fontStyle = match (true) {
+                $name === 'nomorKurban' => 'B',
+                $isQurbanKambingTemplate && in_array($name, ['waktuPengambilan', 'noPanitia'], true) => 'B',
+                default => '',
+            };
             $align = match (true) {
                 $name === 'nomorKurban' => 'C',
+                $isQurbanKambingTemplate && in_array($name, ['tanggal', 'bulan', 'tahun'], true) => 'C',
                 in_array($name, ['biayaSapi', 'biayaKambing', 'infak', 'biayaSupplier'], true) => 'R',
                 default => 'L',
             };
@@ -563,7 +571,21 @@ final class ReportService
             return '';
         }
 
-        return number_format((float) $value, 0, '', '');
+        return number_format((float) $value, 0, ',', '.');
+    }
+
+    private function formatPickupTime($value): string
+    {
+        $text = trim((string) $value);
+        if ($text === '') {
+            return '';
+        }
+
+        if (preg_match('/\bWIB\b/i', $text) === 1) {
+            return $this->safe($text);
+        }
+
+        return $this->safe($text . ' WIB');
     }
 
     private function formatNumber($value): string
